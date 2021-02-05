@@ -62,12 +62,15 @@ const int M_enable = 7;
 const int M_dir = 31;
 const int M_nsleep = 16;
 
-TCA9534 ioex;
-const uint8_t IOEX_ADDR = 0x30; // A0 = A1 = A2 = 0
+
 
 // Motor Sim Variables
 
 // Sensor variables
+
+TCA9534 ioex[4];
+const uint8_t IOEX_ADDR = 0x30; // A0 = A1 = A2 = 0
+
 
 // Sensor Sim Variables
  
@@ -81,9 +84,10 @@ void setup()
   Serial.println("------------------------------\n");
 
   // Only wish to start ble once.
-  startBLE();
-
+  
+  Wire.begin();
   initMotorIC();
+  initBLE();
   
 }
 
@@ -119,4 +123,4 @@ void loop()
     Serial.write(ch);
   }
   */
- */
+ 

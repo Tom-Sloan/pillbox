@@ -1,5 +1,6 @@
-bool checkForFile(File dir, String toCheck)
+bool checkForFile(String dir_t, String toCheck)
 {
+  File dir = SD.open(dir_t);
   isFound = false;
   while(true) {
      
@@ -12,8 +13,8 @@ bool checkForFile(File dir, String toCheck)
      Serial.print(entry.name());
      Serial.print("\t");
      Serial.print(toCheck);
-     Serial.println(strcmp(toCheck, entry.name()));
-     if (strcmp(toCheck, entry.name()))
+     Serial.println(toCheck, entry.name());
+     if (toCheck == entry.name())
      {
       isFound = true;
      }
@@ -24,21 +25,21 @@ bool checkForFile(File dir, String toCheck)
    return isFound;
 }
 
-bool saveData(File dir, String toCheck, String Data)
+bool saveData(String dir, String toCheck, String Data)
 {
-  bool isThere = checkForFile(File dir, String toCheck);
+  bool isThere = checkForFile(dir, toCheck);
   if (isThere)
   {
-    
+    Serial.println("IsthereSave");
   } else 
   {
-    
+    Serial.println("notThereSave");
   }
 }
 
-String readData(File dir, String toCheck)
+String readData(String dir, String toCheck)
 {
-  bool isThere = checkForFile(File dir, String toCheck);
+  bool isThere = checkForFile(dir, toCheck);
   if (isThere)
   {
     String tmp = "TEMP";
@@ -49,5 +50,5 @@ String readData(File dir, String toCheck)
 
 bool checkData(String toCheck)
 {
-  return strcmp(toCheck,"FAIL") ;
+  return toCheck == "FAIL" ;
 }

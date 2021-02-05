@@ -12,7 +12,7 @@ bool playerInit(void)
   Serial.println("SD OK!");
   
   // list files
-  printDirectory(SD.open(baseDir), 0);
+  printDirectory(baseDir, 0);
 
   setVolume(10);
 }
@@ -35,9 +35,11 @@ void playerTest(void)
 
 bool startAlarm(String song)
 {
-  if (checkForFile(song))
+  if (checkForFile(baseDir, song))
   {
-    featherPlayer.startPlayingFile(song);
+//    String t = "/" + song;
+//    featherPlayer.startPlayingFile(song);
+    Serial.println("IsthereSave");
   }else
   {
     playerTest();
@@ -47,7 +49,8 @@ bool startAlarm(String song)
 
 
 /// File listing helper
-void printDirectory(File dir, int numTabs) {
+void printDirectory(File dir, int numTabs) 
+{
    while(true) {
      
      File entry =  dir.openNextFile();

@@ -1,4 +1,4 @@
-void startBLE(void)
+void initBLE()
 {
   // Setup the BLE LED to be enabled on CONNECT
   // Note: This is actually the default behaviour, but provided
