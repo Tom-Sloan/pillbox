@@ -1,20 +1,32 @@
+//----------------------------------------NOTES----------------------------------------
+//1. must remove tx pin from feather connection
+//2. 
 
-//NOTE must remove tx pin from feather connection
-
-//For Bluetooth controls
+//----------------------------------------Libraries----------------------------------------
+// For Bluetooth controls
 #include <bluefruit.h>
 #include <Adafruit_LittleFS.h>
 #include <InternalFileSystem.h>
 
-//For Music player include SPI, MP3 and SD libraries
+// For Music player include SPI, MP3 and SD libraries
 #include <SPI.h> 
 #include <SD.h>
 #include <Adafruit_VS1053.h>
 
-//For motor controls
-#include <Stepper.h>
+// For Motors 
+#include <TCA9534.h>
 
-// These are the pins used
+//----------------------------------------Variable Declaration----------------------------------------
+
+// BLE Service
+BLEDfu  bledfu;  // OTA DFU service
+BLEDis  bledis;  // device information
+BLEUart bleuart; // uart over ble
+BLEBas  blebas;  // battery
+
+// BLE Sim Variables
+
+// Player (noise and sd card)
 #define VS1053_RESET   -1     // VS1053 reset pin (not used!)
 
 #if defined(ARDUINO_NRF52832_FEATHER )
@@ -32,37 +44,62 @@
   #define VS1053_DREQ     9     // VS1053 Data request, ideally an Interrupt pin
 
 #endif
-// BLE Service
-BLEDfu  bledfu;  // OTA DFU service
-BLEDis  bledis;  // device information
-BLEUart bleuart; // uart over ble
-BLEBas  blebas;  // battery
 
-//Music player
+// SD card directory
 String baseDir = "/";
-Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(VS1053_RESET, VS1053_CS, VS1053_DCS, VS1053_DREQ, CARDCS);
 
+// Music player object
+Adafruit_VS1053_FilePlayer featherPlayer = Adafruit_VS1053_FilePlayer(VS1053_RESET, VS1053_CS, VS1053_DCS, VS1053_DREQ, CARDCS);
 
-// initialize the stepper library on pins 8 through 11:
+//Player Sim Variables
+
+// Motor Variables (IC and Motor)
 const int stepsPerRevolution = 200; 
+const int M1_step = 27;
+const int M2_step = 30;
+const int M3_step = 15;
+const int M_enable = 7;
+const int M_dir = 31;
+const int M_nsleep = 16;
 
-Stepper motorA(stepsPerRevolution, 8, 9, 10, 11);
-Stepper motorB(stepsPerRevolution, 8, 9, 10, 11);
-Stepper motorC(stepsPerRevolution, 8, 9, 10, 11);
-  
-  
+TCA9534 ioex;
+const uint8_t IOEX_ADDR = 0x30; // A0 = A1 = A2 = 0
+
+// Motor Sim Variables
+
+// Sensor variables
+
+// Sensor Sim Variables
+ 
+//----------------------------------------END Variable Declaration----------------------------------------
+
+//----------------------------------------Default Functions----------------------------------------
 void setup()
 {
   Serial.begin(115200);
-  Serial.println("Bluefruit52 BLEUART Example");
-  Serial.println("---------------------------\n");
+  Serial.println("\t Pillbox Serial");
+  Serial.println("------------------------------\n");
 
+  // Only wish to start ble once.
   startBLE();
+
+  initMotorIC();
   
 }
 
 void loop()
 {
+  while ( bleuart.available() )
+  {
+    uint8_t ch;
+    ch = (uint8_t) bleuart.read();
+    Serial.write(ch);
+  }
+  checkSensors();
+}
+
+/*
+ *   
   // Forward data from HW Serial to BLEUART
   while (Serial.available())
   {
@@ -81,4 +118,5 @@ void loop()
     ch = (uint8_t) bleuart.read();
     Serial.write(ch);
   }
-}
+  */
+ */

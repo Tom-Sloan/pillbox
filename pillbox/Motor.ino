@@ -1,9 +1,4 @@
-void motorInit(void)
+void initMotorIC()
 {
- motorA.setSpeed(60);  
-}
 
-void positionMotors(Stepper motorA, Stepper motorB, Stepper motorC, int pos)
-{
-  
 }
