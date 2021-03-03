@@ -1,90 +1,12 @@
-//bool checkForFile(String dir_t, String toCheck)
-//{
-//  File dir = SD.open(dir_t);
-//  bool isFound = false;
-//  while(true) {
-//
-//     File entry =  dir.openNextFile();
-//     if (! entry) {
-//       // no more files
-//       //Serial.println("**nomorefiles**");
-//       break;
-//     }
-//     Serial.print(entry.name());
-//     Serial.print("\t");
-//     Serial.print(toCheck);
-//     Serial.print("\t");
-//     Serial.println(entry.name());
-//     if (toCheck == entry.name())
-//     {
-//      isFound = true;
-//     }
-//
-//
-//     entry.close();
-//   }
-//   return isFound;
-//}
-
-bool saveData(String dir, String toCheck, String Data)
-{
-  bool isThere = SD.exists(toCheck);
-  if (isThere)
-  {
-    Serial.println("IsthereSave");
-  } else
-  {
-    Serial.println("notThereSave");
-  }
-}
-
-String readData(String dir, String toCheck)
-{
-  bool isThere = SD.exists(toCheck);
-  if (isThere)
-  {
-    String tmp = "TEMP";
-    return tmp;
-  }
-  return "FAIL";
-}
-
-bool checkData(String toCheck)
-{
-  return toCheck == "FAIL" ;
-}
-
 void addToActions(String action) {
-  File file_read = SD.open("action.txt", FILE_READ);
-
-  // read lines from the file_read
-  String prev = "";
-  while (file_read.available()) {
-    char line[16];
-    file_read.read(line, 16);
-    file_read.read(); //for EOL character
-    String tmp = line;
-    if (tmp > action)
-      break;
-    prev = line;
+  File actionFile = SD.open("action.txt", FILE_READ);
+  if (actionFile){
+    actionFile.println(action);
+    actionFile.close();
+    Serial.println(action);
+    actionFile.close(); 
   }
-  file_read.close();
-
-  File file_write = SD.open("action.txt", FILE_WRITE);
-
-  while (file_write.available()) {
-    char line[16];
-    file_write.read(line, 16);
-    String tmp = line;
-    if (tmp == prev) {
-      file_write.println(action);
-      file_write.close();
-      Serial.println(action);
-    }
-  }
-
 }
-
 void addToEvents(int row, int column) {
   Serial.print("Datafile: ");
   File dataFile = SD.open("events.txt", FILE_WRITE);
@@ -128,6 +50,10 @@ void sendEvents(String comMethod) {
         line_str = "";
       }
     }
+    SD.remove("events.txt");
+    file_read.close();
+  }else{
+    Serial.println("----------------NO EVENTS.txt--------------------------")
   }
   String tmp = "Done Sending Data: ";
   tmp += comMethod;
@@ -165,4 +91,41 @@ void set_base_setup() {
   }
   Serial.println("BSU--HERE6");
   rowChange(0);
+}
+
+void getNextAlarm(){
+  Serial.println("Setting next alarm");
+  if (SD.exists("actions.txt")) {
+    File file_read = SD.open("alarms.txt", FILE_READ);
+    
+    String line_str ="";
+    
+    while (file_read.available()) {
+      char rc = file_read.read();
+      
+      if (rc != '\n'){
+        line_str += rc;
+      }else{
+        String subTime = line_str(6, 17);
+        Serial.print("Sub String Val: ");
+        Serial.println(subTime);
+        
+        if (alarmTime == 0 || alarmTime>subTime){
+          alarmTime = subTime;
+          alarmData = line_str;
+          Serial.print("Next alarm has been changed to \t");
+          Serial.println(alarmData);
+        }
+        line_str = "";
+      }
+    }
+    file_read.close();
+   
+  }else{
+    Serial.println("----------------NO actions.txt--------------------------")
+  }
+  String tmp = "Done alarming device: ";
+  tmp += comMethod;
+  Serial.println(tmp);
+  dataUsed = true; 
 }

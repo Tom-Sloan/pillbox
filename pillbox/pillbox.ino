@@ -57,24 +57,21 @@ String baseDir = "/";
 // Music player object
 Adafruit_VS1053_FilePlayer featherPlayer = Adafruit_VS1053_FilePlayer(VS1053_RESET, VS1053_CS, VS1053_DCS, VS1053_DREQ, CARDCS);
 
-//Player Sim Variables
-
 
 // Motor Variables (IC and Motor)
 const int stepsPerRevolution = 200; 
 #define stp 8
-#define dir 9
-
-// Motor Sim Variables
-
+#define dirctn 9
+int alarmTime = 0;
+String alarmData = "";
+int currentMotorPos[4];
+bool moveOn = true;
 
 // Sensor variables
 //TCA9534 ioex[4];
 Adafruit_MCP23017 ioex[4];
 const int IOEX_ADDR = 0x27; //0x30; // A0 = A1 = A2 = 0
 int numRows = 1;
-
-// Sensor Sim Variables
 
 
 //Time
@@ -98,14 +95,14 @@ void setup(){
   RTCInit(); //Note rtc.begin calls wire.begin
   Serial.println("--HERE");
   set_base_setup();
-  Serial.println("---HERE2");
-  initMotorIC();
+  Serial.println("--HERE2");
+  MotorInit(); //Note rtc.begin calls wire.begin
   Serial.println("PLAYERSTART");
   playerInit();
   Serial.println("--HERE3");
   Serial.println(F("Playing track 002"));
 //  featherPlayer.playFullFile("/track002.mp3");
-  startAlarm("ALARM.mp3");
+//  startAlarm("ALARM.mp3");
   
   Serial.println("--HERE4");
 }
@@ -186,24 +183,29 @@ void loop(){
     delay(2);
     if (Serial.find('R')){
       sendEvents("SERIAL");
-    }
+    } 
     while(Serial.available()){
       Serial.read();
     }
   }
-
+  
   checkSensors();
-  for (int i = 0; i< 10000; i++){
-    if(i%2){
-      
-      ioex[0].digitalWrite(8, HIGH);
-      delay(1);
-    }else{
-      ioex[0].digitalWrite(8, LOW);
-      delay(1);
+  if (rtc.now().unixtime() - 1790 <= alarmTime <= rtc.now().unixtime() + 1790 ){
+    if (!moveon){
+      byte row = alarmData.charAt(3) - '0';
+      byte coln = alarmData.charAt(4) - '0';
+  
+      spotToOpen(row, coln);
+      moveOn = true;
+    }
+  }else{
+    if(moveOn){
+      byte row = alarmData.charAt(3) - '0';
+      lockedPosition(row);
+      getNextAlarm();
+      moveOn = false;
     }
   }
-  Serial.println(rtc.now().unixtime());
   String t = "numRow ";
   t += numRows;
   Serial.println(t);
@@ -212,6 +214,24 @@ void loop(){
 
 /*
  *   
+ *       if (Serial.peek()  =='2' || Serial.peek() == '3') {
+      char user_input;
+      user_input = Serial.read();
+      Serial.print("User Input: ");
+      Serial.println(user_input);
+      
+      if (user_input =='2')
+      {
+        Serial.println("GOING UP");
+        StepForwardDefault();
+      }
+      else if(user_input =='3')
+      {
+        Serial.println("GOING DOWN");
+        ReverseStepDefault();
+      }
+    } else
+    
   // Forward data from HW Serial to BLEUART
   while (Serial.available())
   {

@@ -96,7 +96,6 @@ void disconnect_callback(uint16_t conn_handle, uint8_t reason)
   Serial.print("Disconnected, reason = 0x"); Serial.println(reason, HEX);
 }
 
-
 void processMessage(String dataReceived)
 {
   if (dataReceived.charAt(2)-'0' != numRows){

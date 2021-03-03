@@ -8,7 +8,10 @@ void initSensorIC(int location)
     mcp.pullUp(i, HIGH);  // turn on a 100K pullup internally
   }
   mcp.pinMode(stp, OUTPUT);
-  mcp.pinMode(dir, OUTPUT);
+  mcp.pinMode(dirctn, OUTPUT);
+  mcp.digitalWrite(stp, LOW);
+  mcp.digitalWrite(dirctn, LOW);
+  
   ioex[location] = mcp;
   Serial.println("Done add");
 }
@@ -27,18 +30,18 @@ void rowChange(int oldRowNum){
 int checkSensors()
 {
   for(int row = 0; row<numRows; row++){
-    for(int i = 0; i < 7; i++){
+    for(int i = 0; i < 10; i++){
         int stat = ioex[row].digitalRead(i);
-//        digitalWrite(LED_BUILTIN, stat);
-//        Serial.print("Location: ");
-//        Serial.print(row);
-//        Serial.print("\t");
-//        Serial.print(i);
-//        Serial.print("\t");
-//        Serial.println(stat);
-        if (stat){
-          addToEvents(row, i);
-        }
+        digitalWrite(LED_BUILTIN, stat);
+        Serial.print("Location: ");
+        Serial.print(row);
+        Serial.print("\t");
+        Serial.print(i);
+        Serial.print("\t");
+        Serial.println(stat);
+//        if (stat){
+//          addToEvents(row, i);
+//        }
     }
   }
 }
