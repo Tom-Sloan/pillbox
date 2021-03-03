@@ -26,20 +26,27 @@ bool setVolume(int volume)
 
 void playerTest(void)
 {
-  featherPlayer.sineTest(0x44, 1000);
-  delay(500);
-  featherPlayer.sineTest(0x44, 1000);
-  delay(500);
-  featherPlayer.sineTest(0x44, 1000);
+  featherPlayer.sineTest(0x44, 2000);
+  setVolume(100);
+  featherPlayer.sineTest(0x44, 2000);
+  setVolume(10);
+  featherPlayer.sineTest(0x44, 2000);
+  setVolume(100);
+  featherPlayer.sineTest(0x44, 2000);
+  setVolume(10);
+  featherPlayer.sineTest(0x44, 2000);
+  setVolume(100);
+  featherPlayer.sineTest(0x44, 2000);
+  featherPlayer.stopPlaying();
 }
 
 bool startAlarm(String song)
 {
-  if (checkForFile(baseDir, song))
+  if (SD.exists(song))
   {
 //    String t = "/" + song;
 //    featherPlayer.startPlayingFile(song);
-    Serial.println("IsthereSave");
+    Serial.println("IsthereSong");
   }else
   {
     playerTest();
@@ -49,7 +56,13 @@ bool startAlarm(String song)
 
 
 /// File listing helper
-void printDirectory(File dir, int numTabs) 
+void printDirectory(String dir_t, int numTabs) 
+{
+   File dir = SD.open(dir_t);
+   printDirectoryHelper(dir, numTabs);
+}
+
+void printDirectoryHelper(File dir, int numTabs) 
 {
    while(true) {
      
@@ -65,7 +78,7 @@ void printDirectory(File dir, int numTabs)
      Serial.print(entry.name());
      if (entry.isDirectory()) {
        Serial.println("/");
-       printDirectory(entry, numTabs+1);
+       printDirectoryHelper(entry, numTabs+1);
      } else {
        // files have sizes, directories do not
        Serial.print("\t\t");
