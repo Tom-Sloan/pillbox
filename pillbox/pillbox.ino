@@ -1,6 +1,6 @@
 //----------------------------------------NOTES----------------------------------------
 //1. must remove tx pin from feather connection
-//2. 
+//2.
 
 //----------------------------------------Libraries----------------------------------------
 // For Bluetooth controls
@@ -9,12 +9,11 @@
 #include <InternalFileSystem.h>
 
 // For Music player include SPI, MP3 and SD libraries
-#include <SPI.h> 
+#include <SPI.h>
 #include <SD.h>
 #include <Adafruit_VS1053.h>
 
-// For sensors 
-//#include <TCA9534.h>
+// For sensors
 #include "Adafruit_MCP23017.h"
 
 
@@ -36,19 +35,18 @@ String dataReceived = "";
 #define VS1053_RESET   -1     // VS1053 reset pin (not used!)
 
 #if defined(ARDUINO_NRF52832_FEATHER )
-  #define VS1053_CS       30     // VS1053 chip select pin (output)
-  #define VS1053_DCS      11     // VS1053 Data/command select pin (output)
-  #define CARDCS          27     // Card chip select pin
-  #define VS1053_DREQ     31     // VS1053 Data request, ideally an Interrupt pin
+#define VS1053_CS       30     // VS1053 chip select pin (output)
+#define VS1053_DCS      11     // VS1053 Data/command select pin (output)
+#define CARDCS          27     // Card chip select pin
+#define VS1053_DREQ     31     // VS1053 Data request, ideally an Interrupt pin
 
 // Feather M4, M0, 328, nRF52840 or 32u4
 #else
-  #define VS1053_CS       6     // VS1053 chip select pin (output)
-  #define VS1053_DCS     10     // VS1053 Data/command select pin (output)
-  #define CARDCS          5     // Card chip select pin
-  // DREQ should be an Int pin *if possible* (not possible on 32u4)
-  #define VS1053_DREQ     9     // VS1053 Data request, ideally an Interrupt pin
-
+#define VS1053_CS       6     // VS1053 chip select pin (output)
+#define VS1053_DCS     10     // VS1053 Data/command select pin (output)
+#define CARDCS          5     // Card chip select pin
+// DREQ should be an Int pin *if possible* (not possible on 32u4)
+#define VS1053_DREQ     9     // VS1053 Data request, ideally an Interrupt pin
 #endif
 
 // SD card directory
@@ -59,7 +57,7 @@ Adafruit_VS1053_FilePlayer featherPlayer = Adafruit_VS1053_FilePlayer(VS1053_RES
 
 
 // Motor Variables (IC and Motor)
-const int stepsPerRevolution = 200; 
+const int stepsPerRevolution = 200;
 #define stp 8
 #define dirctn 9
 int alarmTime = 0;
@@ -73,139 +71,150 @@ Adafruit_MCP23017 ioex[4];
 const int IOEX_ADDR = 0x27; //0x30; // A0 = A1 = A2 = 0
 int numRows = 1;
 
-
 //Time
-//#define TIME_HEADER  "T"   // Header tag for serial time sync message
-//#define TIME_REQUEST  7    // ASCII bell character requests a time sync message 
 RTC_DS3231 rtc;
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 
 //----------------------------------------END Variable Declaration----------------------------------------
 
 //----------------------------------------Default Functions----------------------------------------
-void setup(){
+void setup() {
   Serial.begin(115200);
   Serial.println("\t Pillbox Serial");
   Serial.println("------------------------------\n");
 
   // Only wish to start ble once.
-  Serial.println("--HEREA");
+  Serial.println("-----Starting BT------");
   initBLE();
-  Serial.println("--HEREB");
+  Serial.println("-----Starting RTC------");
   RTCInit(); //Note rtc.begin calls wire.begin
-  Serial.println("--HERE");
+  Serial.println("-----Initializing Device------");
   set_base_setup();
-  Serial.println("--HERE2");
-  MotorInit(); //Note rtc.begin calls wire.begin
-  Serial.println("PLAYERSTART");
+  Serial.println("-----Initlizing Motors------");
+  //  MotorInit(); //Note rtc.begin calls wire.begin
+  Serial.println("-----Starting Player------");
   playerInit();
-  Serial.println("--HERE3");
-  Serial.println(F("Playing track 002"));
-//  featherPlayer.playFullFile("/track002.mp3");
-//  startAlarm("ALARM.mp3");
-  
-  Serial.println("--HERE4");
+  Serial.println("-----SD and Volume Check------");
+  //  featherPlayer.playFullFile("/track002.mp3");
+  //  startAlarm("ALARM.mp3");
+
+  Serial.println("-----Setup DONE------");
 }
 
-void loop(){
-  
-  if (bleuart.available()){
+void loop() {
+
+  if (bleuart.available()) {
     //adjust Time
     if (bleuart.peek() == 'A') {
       bleuart.read();
       uint32_t unixTime = 0;
       int value = 0;
-      while(bleuart.available()){
+      while (bleuart.available()) {
         value = bleuart.read() - 48;
         unixTime = unixTime * 10 + value;
       }
-      unixTime = (unixTime - value)/ 10;
-      Wire.beginTransmission(PCF8523_ADDRESS);
-      if (Wire.endTransmission() == 0)
-        rtc.adjust(DateTime(unixTime));
-    
-    } else if (bleuart.peek() == 'T'){ // Recieving an alarm time
-      if (!dataUsed){
+      unixTime = (unixTime - value) / 10;
+      rtc.adjust(DateTime(unixTime));
+
+    } else if (bleuart.peek() == 'T') { // Recieving an alarm time
+      if (!dataUsed) {
         bleuart.read();
         uint32_t unixTime = 0;
         int value = 0;
-        while(bleuart.available()){
+        while (bleuart.available()) {
           value = bleuart.read() - 48;
           unixTime = unixTime * 10 + value;
         }
-        unixTime = (unixTime - value)/ 10;
-        String action = unixTime + "T"+ dataReceived;
-  
-        addToActions(action);      
+        unixTime = (unixTime - value) / 10;
+        String action = unixTime + "T" + dataReceived;
+
+        addToActions(action);
       }
-      
-    } else if (bleuart.peek() == 'R'){ // Request data
-       if (!dataUsed){
-          while(bleuart.available())
-            bleuart.read();
-          sendEvents("BLE");
-       }
-    }    
+
+    } else if (bleuart.peek() == 'R') { // Request data
+      if (!dataUsed) {
+        while (bleuart.available())
+          bleuart.read();
+        sendEvents("BLE");
+      }
+    }
     else { // Recieving an instruction
-        dataReceived = "";
+      dataReceived = "";
+      Serial.println("------------------------------------------");
+      while ( bleuart.available()  && bleuart.peek() != 'T' && bleuart.peek() != 'A' && bleuart.peek() != 'R') {
+
+        uint8_t ch;
+        ch = (uint8_t) bleuart.read();
+        dataUsed = false;
+
+        Serial.write(ch);
+        Serial.print("\t");
+        Serial.println(ch);
+
+        dataReceived += ch  - 48;
+      }
+
+      if (!dataUsed) {
         Serial.println("------------------------------------------");
-        while ( bleuart.available()  && bleuart.peek() != 'T' && bleuart.peek() != 'A' && bleuart.peek() != 'R'){
-          
-            uint8_t ch;
-            ch = (uint8_t) bleuart.read();
-            dataUsed = false;
-            
-            Serial.write(ch);
-            Serial.print("\t");
-            Serial.println(ch);
 
-            dataReceived += ch  - 48;
+        // Print Data
+        for (int i = 0; i <= dataReceived.length(); i++) {
+          char ch = dataReceived.charAt(i);
+          Serial.println(ch);
         }
-      
-        if (!dataUsed){
-          Serial.println("------------------------------------------");
-          
-          // Print Data
-          for (int i = 0; i <= dataReceived.length(); i++){
-            char ch = dataReceived.charAt(i);
-            Serial.println(ch);
-          }
 
-          // DO EVENT
-          if(bleuart.peek() != 'T' && bleuart.peek() != 'A' && bleuart.peek() != 'R')
-            processMessage(dataReceived);
-       }
+        // DO EVENT
+        if (bleuart.peek() != 'T' && bleuart.peek() != 'A' && bleuart.peek() != 'R')
+          processMessage(dataReceived);
+      }
     }
   }
-  
+
   if (Serial.available())
   {
     delay(2);
-    if (Serial.find('R')){
+    if (Serial.peek()  == '2' || Serial.peek() == '3') {
+      char user_input;
+      user_input = Serial.read();
+      Serial.print("User Input: ");
+      Serial.println(user_input);
+
+      if (user_input == '2')
+      {
+        Serial.println("GOING UP");
+        StepForwardDefault();
+      }
+      else if (user_input == '3')
+      {
+        Serial.println("GOING DOWN");
+        ReverseStepDefault();
+      }
+
+    } else if (Serial.find('R')) {
       sendEvents("SERIAL");
-    } 
-    while(Serial.available()){
+    }
+    while (Serial.available()) {
       Serial.read();
     }
   }
-  
+
   checkSensors();
-  if (rtc.now().unixtime() - 1790 <= alarmTime <= rtc.now().unixtime() + 1790 ){
-    if (!moveon){
-      byte row = alarmData.charAt(3) - '0';
-      byte coln = alarmData.charAt(4) - '0';
-  
-      spotToOpen(row, coln);
-      moveOn = true;
-    }
-  }else{
-    if(moveOn){
-      byte row = alarmData.charAt(3) - '0';
-      lockedPosition(row);
-      getNextAlarm();
-      moveOn = false;
-    }
-  }
+  //  if (rtc.now().unixtime() - 1790 <= alarmTime <= rtc.now().unixtime() + 1790 ){
+  //    if (!moveon){
+  //      byte row = alarmData.charAt(3) - '0';
+  //      byte coln = alarmData.charAt(4) - '0';
+  //
+  //      spotToOpen(row, coln);
+  //      moveOn = true;
+  //    }
+  //  }else{
+  //    if(moveOn){
+  //      byte row = alarmData.charAt(3) - '0';
+  //      lockedPosition(row);
+  //      getNextAlarm();
+  //      moveOn = false;
+  //    }
+  //  }
   String t = "numRow ";
   t += numRows;
   Serial.println(t);
@@ -213,25 +222,9 @@ void loop(){
 }
 
 /*
- *   
- *       if (Serial.peek()  =='2' || Serial.peek() == '3') {
-      char user_input;
-      user_input = Serial.read();
-      Serial.print("User Input: ");
-      Serial.println(user_input);
-      
-      if (user_input =='2')
-      {
-        Serial.println("GOING UP");
-        StepForwardDefault();
-      }
-      else if(user_input =='3')
-      {
-        Serial.println("GOING DOWN");
-        ReverseStepDefault();
-      }
-    } else
-    
+
+
+
   // Forward data from HW Serial to BLEUART
   while (Serial.available())
   {
@@ -251,21 +244,20 @@ void loop(){
     Serial.write(ch);
   }
 
-//  setSyncProvider( requestSync);  //set function to call when time sync required
+  //  setSyncProvider( requestSync);  //set function to call when time sync required
 
   //      processSyncMessage(unixTime);
-//      if (timeStatus() == timeSet) {
-//        digitalWrite(13, HIGH); // LED on if synced
-//      } else {
-//        digitalWrite(13, LOW);  // LED off if needs refresh
-//      }
-//      bool toggle = false;
-//      while(!toggle){
-//          if (timeStatus()!= timeNotSet) {
-//            Serial.print("time set to: ");
-//            digitalClockDisplay();  
-//            toggle = true;
-//          }
-//      }
-  */
- 
+  //      if (timeStatus() == timeSet) {
+  //        digitalWrite(13, HIGH); // LED on if synced
+  //      } else {
+  //        digitalWrite(13, LOW);  // LED off if needs refresh
+  //      }
+  //      bool toggle = false;
+  //      while(!toggle){
+  //          if (timeStatus()!= timeNotSet) {
+  //            Serial.print("time set to: ");
+  //            digitalClockDisplay();
+  //            toggle = true;
+  //          }
+  //      }
+*/

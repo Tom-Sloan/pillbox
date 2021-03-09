@@ -53,7 +53,7 @@ void sendEvents(String comMethod) {
     SD.remove("events.txt");
     file_read.close();
   }else{
-    Serial.println("----------------NO EVENTS.txt--------------------------")
+    Serial.println("----------------NO EVENTS.txt--------------------------");
   }
   String tmp = "Done Sending Data: ";
   tmp += comMethod;
@@ -106,7 +106,7 @@ void getNextAlarm(){
       if (rc != '\n'){
         line_str += rc;
       }else{
-        String subTime = line_str(6, 17);
+        int subTime = line_str.substring(6, 17).toInt();
         Serial.print("Sub String Val: ");
         Serial.println(subTime);
         
@@ -122,10 +122,10 @@ void getNextAlarm(){
     file_read.close();
    
   }else{
-    Serial.println("----------------NO actions.txt--------------------------")
+    Serial.println("----------------NO actions.txt--------------------------");
   }
   String tmp = "Done alarming device: ";
-  tmp += comMethod;
+  tmp += alarmData;
   Serial.println(tmp);
   dataUsed = true; 
 }

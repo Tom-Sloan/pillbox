@@ -15,9 +15,9 @@ void StepForwardDefault()
   for (int x = 0; x < 1000; x++) //Loop the forward stepping enough times for motion to be visible
   {
     ioex[0].digitalWrite(stp, HIGH); //Trigger one step forward
-    delay(1);
+    delay(10);
     ioex[0].digitalWrite(stp, LOW); //Pull step pin low so it can be triggered again
-    delay(1);
+    delay(10);
   }
   Serial.println("Enter new option");
   Serial.println();
