@@ -63,33 +63,26 @@ void sendEvents(String comMethod) {
 
 
 void set_base_setup() {
-  Serial.println("BSU--HERE2");
+  
   if (SD.exists("setup.txt")) {
     File file_read = SD.open("setup.txt", FILE_READ);
     char line[16];
     file_read.read(line, 16);
     file_read.read(); //for EOL character
-    Serial.println(line);
 
     int rows = line[2] - '0';
     numRows = rows;
     file_read.close();
     dataUsed = true;
-    Serial.println("BSU--HERE3");
-    Serial.println(rows);
 
   } else {
-    Serial.println("BSU--HERE4");
     File file_write = SD.open("setup.txt", FILE_WRITE);
-    Serial.println("hello");
+    
     String tmp = "00100T";
     tmp += rtc.now().unixtime();
-    Serial.println(tmp);
     file_write.println(tmp);
     file_write.close();
-    Serial.println("BSU--HERE5");
   }
-  Serial.println("BSU--HERE6");
   rowChange(0);
 }
 

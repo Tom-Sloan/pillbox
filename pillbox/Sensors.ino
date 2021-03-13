@@ -2,15 +2,31 @@
 void initSensorIC(int location)
 {
   Adafruit_MCP23017 mcp;
-  mcp.begin(IOEX_ADDR-location+1);      // use default address 0x20
+  mcp.begin(IOEX_ADDR[location]);      
   for(int i = 0; i < 8; i++){
     mcp.pinMode(i, INPUT);
     mcp.pullUp(i, HIGH);  // turn on a 100K pullup internally
   }
-  mcp.pinMode(stp, OUTPUT);
-  mcp.pinMode(dirctn, OUTPUT);
-  mcp.digitalWrite(stp, LOW);
-  mcp.digitalWrite(dirctn, LOW);
+  if(!isServo){
+    mcp.pinMode(stp2, OUTPUT);
+    pinMode(stp, OUTPUT);
+    
+    mcp.pinMode(MS1, OUTPUT);
+    mcp.pinMode(MS2, OUTPUT);
+    mcp.pinMode(EN, OUTPUT);
+    mcp.pinMode(dirctn, OUTPUT);
+    
+    mcp.digitalWrite(stp2, LOW);
+    digitalWrite(stp, LOW);
+    
+    mcp.digitalWrite(dirctn, LOW);
+    mcp.digitalWrite(MS1, LOW);
+    mcp.digitalWrite(MS2, LOW);
+    mcp.digitalWrite(EN, HIGH);
+
+  }else{
+    myservo.attach(servoPin); 
+  }
   
   ioex[location] = mcp;
   Serial.println("Done add");
@@ -22,7 +38,10 @@ void rowChange(int oldRowNum){
     Serial.println("Pre add");
     for (int i = 0; i<numRows-oldRowNum;i++){
       Serial.println("adding");
-      initSensorIC(oldRowNum+i);
+      if (oldRowNum+i < sizeof(IOEX_ADDR)){
+        initSensorIC(oldRowNum+i);
+//        openAllRow(oldRowNum+i);
+      }
     }
   }
 }
@@ -45,36 +64,3 @@ int checkSensors()
     }
   }
 }
-
-/*
- * 
- * 
- *     int counter = 0;
-//    try
-//    {
-//      for (byte i = 0; i < (sizeof(myValues) / sizeof(myValues[0])); i++) {
-//        counter++;
-//        
-//      }
-//    } catch
-//    {
-//       
-//    }
-//    */
-
-
-//void initSensorIC(int location)
-//{
-//    TCA9534 ioex_temp;
-//    ioex_temp.attach(Wire);
-//    ioex_temp.setDeviceAddress(IOEX_ADDR);
-//    ioex_temp.config(TCA9534::Config::IN); // set all port to input
-//    ioex_temp.polarity(TCA9534::Polarity::ORIGINAL); // set all port polarity to inverse
-//
-//    Serial.print("config  : ");
-//    Serial.println(ioex_temp.config(), HEX);
-//    Serial.print("polarity: ");
-//    Serial.println(ioex_temp.polarity(), HEX);
-//    ioex[location] = ioex_temp;
-//
-//}

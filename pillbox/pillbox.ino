@@ -16,6 +16,8 @@
 // For sensors
 #include "Adafruit_MCP23017.h"
 
+//For Motors
+#include <Servo.h>
 
 //For time
 #include "RTClib.h"
@@ -57,18 +59,34 @@ Adafruit_VS1053_FilePlayer featherPlayer = Adafruit_VS1053_FilePlayer(VS1053_RES
 
 
 // Motor Variables (IC and Motor)
+bool isServo = false;
+
+//Servo
+float positions_servo[8] = {0, 25.7, 51.4, 77.1, 102.9, 128.6, 154.3, 180.0};
+Servo myservo;
+#define servoPin 15
+
+//Stepper
 const int stepsPerRevolution = 200;
-#define stp 8
+int positions_stepper[4];
+const int finalPositions[8] = {0, 250, 514, 771, 1029, 1286, 1543, 1800}; //Position 
+#define stp2 13
+#define stp 7
+#define EN  8
 #define dirctn 9
+#define slp 10
+#define MS1 11
+#define MS2 12
+
+
 int alarmTime = 0;
 String alarmData = "";
-int currentMotorPos[4];
 bool moveOn = true;
 
 // Sensor variables
 //TCA9534 ioex[4];
 Adafruit_MCP23017 ioex[4];
-const int IOEX_ADDR = 0x27; //0x30; // A0 = A1 = A2 = 0
+const int IOEX_ADDR[4] = {0x27, 0x26, 0x25, 0x24}; //0x30; // A0 = A1 = A2 = 0
 int numRows = 1;
 
 //Time
@@ -76,6 +94,8 @@ RTC_DS3231 rtc;
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 
 //----------------------------------------END Variable Declaration----------------------------------------
+
+
 
 //----------------------------------------Default Functions----------------------------------------
 void setup() {
@@ -88,8 +108,7 @@ void setup() {
   initBLE();
   Serial.println("-----Starting RTC------");
   RTCInit(); //Note rtc.begin calls wire.begin
-  Serial.println("-----Initializing Device------");
-  set_base_setup();
+
   Serial.println("-----Initlizing Motors------");
   //  MotorInit(); //Note rtc.begin calls wire.begin
   Serial.println("-----Starting Player------");
@@ -97,12 +116,17 @@ void setup() {
   Serial.println("-----SD and Volume Check------");
   //  featherPlayer.playFullFile("/track002.mp3");
   //  startAlarm("ALARM.mp3");
-
+  Serial.println("-----Initializing Device------");
+  set_base_setup();
   Serial.println("-----Setup DONE------");
+  digitalWrite(stp, LOW);
 }
 
 void loop() {
-
+  String t = "numRow1 ";
+  t += numRows;
+  Serial.println(t);
+  digitalWrite(stp, LOW);
   if (bleuart.available()) {
     //adjust Time
     if (bleuart.peek() == 'A') {
@@ -169,7 +193,9 @@ void loop() {
       }
     }
   }
-
+  t = "numRow2 ";
+  t += numRows;
+  Serial.println(t);
   if (Serial.available())
   {
     delay(2);
@@ -199,7 +225,7 @@ void loop() {
   }
 
   checkSensors();
-  //  if (rtc.now().unixtime() - 1790 <= alarmTime <= rtc.now().unixtime() + 1790 ){
+  //  if (rtc.now().unixtime() - 1790 <= alarmTime && alarmTime <= rtc.now().unixtime() + 1790 ){
   //    if (!moveon){
   //      byte row = alarmData.charAt(3) - '0';
   //      byte coln = alarmData.charAt(4) - '0';
@@ -215,7 +241,7 @@ void loop() {
   //      moveOn = false;
   //    }
   //  }
-  String t = "numRow ";
+  t = "numRow ";
   t += numRows;
   Serial.println(t);
   delay(1000);

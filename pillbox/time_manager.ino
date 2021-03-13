@@ -3,7 +3,7 @@ void RTCInit() {
     Serial.println("Couldn't find RTC");
     while (1);
   }
-
+  Serial.println("Found RTC");
   if (rtc.lostPower()) {
     Serial.println("RTC lost power, lets set the time!");
 
@@ -15,13 +15,8 @@ void RTCInit() {
     // for example to set January 27 2017 at 12:56 you would call:
     // rtc.adjust(DateTime(2017, 1, 27, 12, 56, 0));
   }
+  Serial.println("Setup RTC done");
 }
-
-bool compareTimes() {
-  return true;
-}
-
-
 
 
 //void printDigits(int digits) {

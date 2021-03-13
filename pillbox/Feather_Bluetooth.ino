@@ -108,7 +108,7 @@ void processMessage(String dataReceived)
     file_read.close();
 
     rowChange(oldNumRows);
-   }else{
+  }else{
     String tmp = "Message received: " + dataReceived;
     Serial.println(tmp);   
   }
