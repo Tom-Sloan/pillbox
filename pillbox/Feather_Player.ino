@@ -33,25 +33,27 @@ void playerTest(void)
   featherPlayer.sineTest(0x44, 2000);
   setVolume(100);
   featherPlayer.sineTest(0x44, 2000);
-  setVolume(10);
-  featherPlayer.sineTest(0x44, 2000);
-  setVolume(100);
-  featherPlayer.sineTest(0x44, 2000);
   featherPlayer.stopPlaying();
 }
 
-bool startAlarm(String song)
+bool startAlarm(int index)
 {
-  if (SD.exists(song))
+  Serial.print("Starting Alarm: ");
+  if (index > 1 && index < 15)
   {
-//    String t = "/" + song;
-//    featherPlayer.startPlayingFile(song);
-    Serial.println("IsthereSong");
+    
+    String t = "/Alarms/alarm";
+    t += index;
+    t += ".mp3"; 
+    Serial.print("indexed -> ");
+    featherPlayer.startPlayingFile(t.c_str());
+    Serial.println(t);
   }else
   {
+    Serial.print("Test ");
     playerTest();
+    Serial.println("Finished");
   }
-  
 }
 
 

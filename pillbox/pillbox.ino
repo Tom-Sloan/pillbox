@@ -69,8 +69,7 @@ Servo myservo;
 //Stepper
 const int stepsPerRevolution = 200;
 int positions_stepper[4];
-const int finalPositions[8] = {0, 250, 514, 771, 1029, 1286, 1543, 1800}; //Position 
-#define stp2 13
+const int finalPositions[8] = {0, 815, 1630, 2445, 3260, 4075, 4890, 5705}; //Position 
 #define stp 7
 #define EN  8
 #define dirctn 9
@@ -82,6 +81,7 @@ const int finalPositions[8] = {0, 250, 514, 771, 1029, 1286, 1543, 1800}; //Posi
 int alarmTime = 0;
 String alarmData = "";
 bool moveOn = true;
+bool playedAlarm = true;
 
 // Sensor variables
 //TCA9534 ioex[4];
@@ -115,18 +115,15 @@ void setup() {
   playerInit();
   Serial.println("-----SD and Volume Check------");
   //  featherPlayer.playFullFile("/track002.mp3");
-  //  startAlarm("ALARM.mp3");
+  startAlarm(0);
   Serial.println("-----Initializing Device------");
   set_base_setup();
   Serial.println("-----Setup DONE------");
-  digitalWrite(stp, LOW);
 }
 
 void loop() {
-  String t = "numRow1 ";
-  t += numRows;
-  Serial.println(t);
-  digitalWrite(stp, LOW);
+  Serial.print("Time");
+  Serial.println(rtc.now().unixtime());
   if (bleuart.available()) {
     //adjust Time
     if (bleuart.peek() == 'A') {
@@ -142,16 +139,26 @@ void loop() {
 
     } else if (bleuart.peek() == 'T') { // Recieving an alarm time
       if (!dataUsed) {
-        bleuart.read();
+        char a = bleuart.read();
+        Serial.println(a);
         uint32_t unixTime = 0;
         int value = 0;
         while (bleuart.available()) {
-          value = bleuart.read() - 48;
-          unixTime = unixTime * 10 + value;
+          int val = bleuart.read() - 48;
+          if (val >=0 && val <= 9){
+            value = val;
+            Serial.print("val: ");
+            Serial.println(value);
+            unixTime = unixTime * 10 + value;
+            Serial.println(unixTime);
+          }
         }
-        unixTime = (unixTime - value) / 10;
-        String action = unixTime + "T" + dataReceived;
 
+        String action =  "";
+        action += dataReceived;
+        action += "T";
+        action += unixTime;
+        Serial.println(action);
         addToActions(action);
       }
 
@@ -193,28 +200,17 @@ void loop() {
       }
     }
   }
-  t = "numRow2 ";
-  t += numRows;
-  Serial.println(t);
+
   if (Serial.available())
   {
     delay(2);
-    if (Serial.peek()  == '2' || Serial.peek() == '3') {
+    if (Serial.peek()-'0'  >= 0 || Serial.peek()-'0' <= 7) {
       char user_input;
       user_input = Serial.read();
       Serial.print("User Input: ");
-      Serial.println(user_input);
-
-      if (user_input == '2')
-      {
-        Serial.println("GOING UP");
-        StepForwardDefault();
-      }
-      else if (user_input == '3')
-      {
-        Serial.println("GOING DOWN");
-        ReverseStepDefault();
-      }
+      Serial.println(user_input - '0');
+      Serial.println("GOING UP");
+      spotToOpen(0, user_input - '0');
 
     } else if (Serial.find('R')) {
       sendEvents("SERIAL");
@@ -225,25 +221,44 @@ void loop() {
   }
 
   checkSensors();
-  //  if (rtc.now().unixtime() - 1790 <= alarmTime && alarmTime <= rtc.now().unixtime() + 1790 ){
-  //    if (!moveon){
-  //      byte row = alarmData.charAt(3) - '0';
-  //      byte coln = alarmData.charAt(4) - '0';
-  //
-  //      spotToOpen(row, coln);
-  //      moveOn = true;
-  //    }
-  //  }else{
-  //    if(moveOn){
-  //      byte row = alarmData.charAt(3) - '0';
-  //      lockedPosition(row);
-  //      getNextAlarm();
-  //      moveOn = false;
-  //    }
-  //  }
-  t = "numRow ";
-  t += numRows;
-  Serial.println(t);
+  if (rtc.now().unixtime() - 20 <= alarmTime && alarmTime <= rtc.now().unixtime() + 20 ){ //1790
+    if (!moveOn){
+      byte row = alarmData.charAt(3) - '0';
+      byte coln = alarmData.charAt(4) - '0';
+      
+      Serial.print("Opening for alarm at: ");
+      Serial.print(row);
+      Serial.print("\t");
+      Serial.println(coln);
+
+      spotToOpen(row, coln);
+      moveOn = true;
+      playedAlarm = false;
+    }
+
+//    if (!playedAlarm && (rtc.now().unixtime() - 10 <= alarmTime && alarmTime <= rtc.now().unixtime() + 10)){
+//      byte alarmNoise = alarmData.charAt(1) - '0';
+//      startAlarm(alarmNoise);
+//      playedAlarm = true;
+//    }
+  }else{
+    if(moveOn){
+      if (alarmData != ""){
+        Serial.println("Starting Alarm Set");
+        byte row = alarmData.charAt(3) - '0';
+        Serial.println("Got row");
+        lockedPosition(row); //Locking previous row
+        Serial.println("setLocked Pos");
+        alarmTime = 0;//REMOVE
+        getNextAlarm();
+        Serial.println("got next alarm");
+        Serial.println(alarmData);     
+        moveOn = false;
+        
+      }
+    }
+  }
+  
   delay(1000);
 }
 

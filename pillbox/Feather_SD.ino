@@ -1,10 +1,11 @@
 void addToActions(String action) {
-  File actionFile = SD.open("action.txt", FILE_READ);
+  File actionFile = SD.open("actions.txt", FILE_WRITE);
   if (actionFile){
     actionFile.println(action);
     actionFile.close();
     Serial.println(action);
     actionFile.close(); 
+    getNextAlarm();
   }
 }
 void addToEvents(int row, int column) {
@@ -65,17 +66,22 @@ void sendEvents(String comMethod) {
 void set_base_setup() {
   
   if (SD.exists("setup.txt")) {
+    Serial.println("Old SBS");
     File file_read = SD.open("setup.txt", FILE_READ);
-    char line[16];
-    file_read.read(line, 16);
-    file_read.read(); //for EOL character
-
-    int rows = line[2] - '0';
+    
+    char a = file_read.read();
+    char b = file_read.read();
+    char line = file_read.read();
+    Serial.println(a);
+    Serial.println(b);
+    Serial.println(line);
+    int rows = line - '0';
     numRows = rows;
     file_read.close();
     dataUsed = true;
 
   } else {
+    Serial.println("New SBS");
     File file_write = SD.open("setup.txt", FILE_WRITE);
     
     String tmp = "00100T";
@@ -83,31 +89,43 @@ void set_base_setup() {
     file_write.println(tmp);
     file_write.close();
   }
+  Serial.println("Done: SBS");
   rowChange(0);
+  getNextAlarm();
 }
 
 void getNextAlarm(){
   Serial.println("Setting next alarm");
   if (SD.exists("actions.txt")) {
-    File file_read = SD.open("alarms.txt", FILE_READ);
-    
+    File file_read = SD.open("actions.txt", FILE_READ);
     String line_str ="";
     
     while (file_read.available()) {
       char rc = file_read.read();
-      
       if (rc != '\n'){
         line_str += rc;
       }else{
         int subTime = line_str.substring(6, 17).toInt();
         Serial.print("Sub String Val: ");
         Serial.println(subTime);
-        
-        if (alarmTime == 0 || alarmTime>subTime){
+        byte row = line_str.charAt(3) - '0';
+        if ((alarmTime == 0 || alarmTime>subTime) && subTime >= rtc.now().unixtime() && row < numRows){
           alarmTime = subTime;
           alarmData = line_str;
           Serial.print("Next alarm has been changed to \t");
           Serial.println(alarmData);
+        }else if(alarmTime == 0 && subTime <= rtc.now().unixtime() && row < numRows){
+          subTime  =  rtc.now().unixtime() + 40 ;
+          int ran = random(0,7);
+          
+          line_str = "1010";
+          line_str += ran;
+          line_str += "T";
+          line_str += subTime;
+          alarmTime = subTime;
+          alarmData = line_str;
+          Serial.print("Next alarm has been changed to \t");
+          Serial.println(subTime);
         }
         line_str = "";
       }

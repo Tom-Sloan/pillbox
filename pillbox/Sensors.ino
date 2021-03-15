@@ -8,21 +8,22 @@ void initSensorIC(int location)
     mcp.pullUp(i, HIGH);  // turn on a 100K pullup internally
   }
   if(!isServo){
-    mcp.pinMode(stp2, OUTPUT);
+
     pinMode(stp, OUTPUT);
     
     mcp.pinMode(MS1, OUTPUT);
     mcp.pinMode(MS2, OUTPUT);
     mcp.pinMode(EN, OUTPUT);
+    mcp.pinMode(slp, OUTPUT);
     mcp.pinMode(dirctn, OUTPUT);
     
-    mcp.digitalWrite(stp2, LOW);
     digitalWrite(stp, LOW);
     
     mcp.digitalWrite(dirctn, LOW);
     mcp.digitalWrite(MS1, LOW);
     mcp.digitalWrite(MS2, LOW);
     mcp.digitalWrite(EN, HIGH);
+    mcp.digitalWrite(slp, LOW);
 
   }else{
     myservo.attach(servoPin); 
@@ -33,14 +34,22 @@ void initSensorIC(int location)
 }
 
 void rowChange(int oldRowNum){
+
   if (oldRowNum<numRows){
     //add
     Serial.println("Pre add");
     for (int i = 0; i<numRows-oldRowNum;i++){
       Serial.println("adding");
-      if (oldRowNum+i < sizeof(IOEX_ADDR)){
+      String tmp = "index: ";
+      tmp += i;
+      tmp += "\t numRows: ";
+      tmp += numRows;
+      tmp += "\t oldrows: ";
+      tmp += oldRowNum;
+      Serial.println(tmp);
+      if (oldRowNum+i < 4){
         initSensorIC(oldRowNum+i);
-//        openAllRow(oldRowNum+i);
+        openAllRow(oldRowNum+i);
       }
     }
   }
@@ -49,18 +58,21 @@ void rowChange(int oldRowNum){
 int checkSensors()
 {
   for(int row = 0; row<numRows; row++){
-    for(int i = 0; i < 10; i++){
+    for(int i = 0; i < 7; i++){
         int stat = ioex[row].digitalRead(i);
-        digitalWrite(LED_BUILTIN, stat);
-        Serial.print("Location: ");
-        Serial.print(row);
-        Serial.print("\t");
-        Serial.print(i);
-        Serial.print("\t");
-        Serial.println(stat);
-//        if (stat){
-//          addToEvents(row, i);
-//        }
+
+        if (stat){
+          digitalWrite(LED_BUILTIN, HIGH);
+          delay(1000);
+          digitalWrite(LED_BUILTIN, LOW);
+          Serial.print("Location: ");
+          Serial.print(row);
+          Serial.print("\t");
+          Serial.print(i);
+          Serial.print("\t");
+          Serial.println(stat);
+          addToEvents(row, i);
+        }
     }
   }
 }
