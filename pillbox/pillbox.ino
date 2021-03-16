@@ -102,20 +102,21 @@ void setup() {
   Serial.begin(115200);
   Serial.println("\t Pillbox Serial");
   Serial.println("------------------------------\n");
-
+  Serial.println("-----Starting Player------");
+  playerInit();
+  Serial.println("-----SD and Volume Check------");
+  featherPlayer.playFullFile("/Alarms/alarm2.mp3");
+  Serial.println("2");
+  startAlarm(3);
+  delay(1000);
+  Serial.println("12");
+  startAlarm(0);
   // Only wish to start ble once.
   Serial.println("-----Starting BT------");
   initBLE();
   Serial.println("-----Starting RTC------");
   RTCInit(); //Note rtc.begin calls wire.begin
 
-  Serial.println("-----Initlizing Motors------");
-  //  MotorInit(); //Note rtc.begin calls wire.begin
-  Serial.println("-----Starting Player------");
-  playerInit();
-  Serial.println("-----SD and Volume Check------");
-  //  featherPlayer.playFullFile("/track002.mp3");
-  startAlarm(0);
   Serial.println("-----Initializing Device------");
   set_base_setup();
   Serial.println("-----Setup DONE------");
@@ -128,7 +129,7 @@ void loop() {
     //adjust Time
     if (bleuart.peek() == 'A') {
       bleuart.read();
-      uint32_t unixTime = 0;
+      uint32_t unixTime = 0; 
       int value = 0;
       while (bleuart.available()) {
         value = bleuart.read() - 48;
@@ -261,44 +262,3 @@ void loop() {
   
   delay(1000);
 }
-
-/*
-
-
-
-  // Forward data from HW Serial to BLEUART
-  while (Serial.available())
-  {
-    // Delay to wait for enough input, since we have a limited transmission buffer
-    delay(2);
-
-    uint8_t buf[64];
-    int count = Serial.readBytes(buf, sizeof(buf));
-    bleuart.write( buf, count );
-  }
-
-  // Forward from BLEUART to HW Serial
-  while ( bleuart.available() )
-  {
-    uint8_t ch;
-    ch = (uint8_t) bleuart.read();
-    Serial.write(ch);
-  }
-
-  //  setSyncProvider( requestSync);  //set function to call when time sync required
-
-  //      processSyncMessage(unixTime);
-  //      if (timeStatus() == timeSet) {
-  //        digitalWrite(13, HIGH); // LED on if synced
-  //      } else {
-  //        digitalWrite(13, LOW);  // LED off if needs refresh
-  //      }
-  //      bool toggle = false;
-  //      while(!toggle){
-  //          if (timeStatus()!= timeNotSet) {
-  //            Serial.print("time set to: ");
-  //            digitalClockDisplay();
-  //            toggle = true;
-  //          }
-  //      }
-*/

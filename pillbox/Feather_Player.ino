@@ -33,6 +33,7 @@ void playerTest(void)
   featherPlayer.sineTest(0x44, 2000);
   setVolume(100);
   featherPlayer.sineTest(0x44, 2000);
+  setVolume(10);
   featherPlayer.stopPlaying();
 }
 
@@ -46,8 +47,9 @@ bool startAlarm(int index)
     t += index;
     t += ".mp3"; 
     Serial.print("indexed -> ");
-    featherPlayer.startPlayingFile(t.c_str());
+    bool a = featherPlayer.playFullFile(t.c_str());
     Serial.println(t);
+    Serial.println(a);
   }else
   {
     Serial.print("Test ");
