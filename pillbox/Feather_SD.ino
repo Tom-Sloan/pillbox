@@ -114,19 +114,20 @@ void getNextAlarm(){
           alarmData = line_str;
           Serial.print("Next alarm has been changed to \t");
           Serial.println(alarmData);
-        }else if(alarmTime == 0 && subTime <= rtc.now().unixtime() && row < numRows){
-          subTime  =  rtc.now().unixtime() + 40 ;
-          int ran = random(0,7);
-          
-          line_str = "1010";
-          line_str += ran;
-          line_str += "T";
-          line_str += subTime;
-          alarmTime = subTime;
-          alarmData = line_str;
-          Serial.print("Next alarm has been changed to \t");
-          Serial.println(subTime);
         }
+//        else if(alarmTime == 0 && subTime <= rtc.now().unixtime() && row < numRows){
+//          subTime  =  rtc.now().unixtime() + 40 ;
+//          int ran = random(0,7);
+//          
+//          line_str = "1010";
+//          line_str += ran;
+//          line_str += "T";
+//          line_str += subTime;
+//          alarmTime = subTime;
+//          alarmData = line_str;
+//          Serial.print("Next alarm has been changed to \t");
+//          Serial.println(subTime);
+//        }
         line_str = "";
       }
     }

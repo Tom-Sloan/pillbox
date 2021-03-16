@@ -29,6 +29,11 @@ void initSensorIC(int location)
     myservo.attach(servoPin); 
   }
   
+  for(int i = 0; i < 7; i++){
+    lastBtnStates[location][i] = mcp.digitalRead(i);
+    currentBtnStates[location][i] = mcp.digitalRead(i);
+  }
+  
   ioex[location] = mcp;
   Serial.println("Done add");
 }
@@ -55,16 +60,26 @@ void rowChange(int oldRowNum){
   }
 }
 
-int checkSensors()
+void checkSensors()
 {
+  bool changedState = false;
   for(int row = 0; row<numRows; row++){
     for(int i = 0; i < 7; i++){
-        int stat = ioex[row].digitalRead(i);
 
-        if (stat){
-          digitalWrite(LED_BUILTIN, HIGH);
-          delay(1000);
-          digitalWrite(LED_BUILTIN, LOW);
+      int stat = ioex[row].digitalRead(i);
+      
+      if (lastBtnStates[row][i] != stat){
+        lastDebounceTime = millis();
+      }
+      lastBtnStates[row][i] = stat;
+      
+      if ((millis() - lastDebounceTime) < debounceDelay) {
+        return;
+      }
+
+      if(currentBtnStates[row][i] != stat){
+        currentBtnStates[row][i] = stat;
+        if (!stat){
           Serial.print("Location: ");
           Serial.print(row);
           Serial.print("\t");
@@ -73,6 +88,7 @@ int checkSensors()
           Serial.println(stat);
           addToEvents(row, i);
         }
+      }
     }
   }
 }

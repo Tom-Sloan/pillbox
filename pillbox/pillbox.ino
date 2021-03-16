@@ -88,6 +88,22 @@ bool playedAlarm = true;
 Adafruit_MCP23017 ioex[4];
 const int IOEX_ADDR[4] = {0x27, 0x26, 0x25, 0x24}; //0x30; // A0 = A1 = A2 = 0
 int numRows = 1;
+bool lastBtnStates[4][7] = {
+  {false, false, false, false},
+  {false, false, false, false},
+  {false, false, false, false},
+  {false, false, false, false}
+};
+bool currentBtnStates[4][7] = {
+  {false, false, false, false},
+  {false, false, false, false},
+  {false, false, false, false},
+  {false, false, false, false}
+};
+
+
+long lastDebounceTime = 0; // the last time the output pin was toggled
+long debounceDelay = 50; // the debounce time; increase if the output flickers
 
 //Time
 RTC_DS3231 rtc;
@@ -105,18 +121,12 @@ void setup() {
   Serial.println("-----Starting Player------");
   playerInit();
   Serial.println("-----SD and Volume Check------");
-  featherPlayer.playFullFile("/Alarms/alarm2.mp3");
-  Serial.println("2");
-  startAlarm(3);
-  delay(1000);
-  Serial.println("12");
-  startAlarm(0);
+//  startAlarm(3);
   // Only wish to start ble once.
   Serial.println("-----Starting BT------");
   initBLE();
   Serial.println("-----Starting RTC------");
   RTCInit(); //Note rtc.begin calls wire.begin
-
   Serial.println("-----Initializing Device------");
   set_base_setup();
   Serial.println("-----Setup DONE------");
@@ -205,7 +215,7 @@ void loop() {
   if (Serial.available())
   {
     delay(2);
-    if (Serial.peek()-'0'  >= 0 || Serial.peek()-'0' <= 7) {
+    if (Serial.peek()-'0'  >= 1 && Serial.peek()-'0' <= 7) {
       char user_input;
       user_input = Serial.read();
       Serial.print("User Input: ");
@@ -242,6 +252,7 @@ void loop() {
 //      startAlarm(alarmNoise);
 //      playedAlarm = true;
 //    }
+
   }else{
     if(moveOn){
       if (alarmData != ""){
@@ -250,7 +261,7 @@ void loop() {
         Serial.println("Got row");
         lockedPosition(row); //Locking previous row
         Serial.println("setLocked Pos");
-        alarmTime = 0;//REMOVE
+//        alarmTime = 0;//REMOVE
         getNextAlarm();
         Serial.println("got next alarm");
         Serial.println(alarmData);     
@@ -259,6 +270,4 @@ void loop() {
       }
     }
   }
-  
-  delay(1000);
 }
