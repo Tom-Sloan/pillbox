@@ -102,7 +102,13 @@ void loop()
   if (Serial.available()){
       delay(2);
       if (Serial.find('R')) {
-        Serial.print("Recieved message type: R");
+        Serial.print("10100T1234567890\n");
+        Serial.print("10100T1234567890\n");
+        Serial.print("10100T1234567890\n");
+        Serial.print("10100T1234567890\n");
+        Serial.print("10100T1234567890\n");
+        Serial.print("10100T1234567890\n");
+        Serial.print("10100T1234567890\n");
       }
       while (Serial.available()) {
         Serial.read();
