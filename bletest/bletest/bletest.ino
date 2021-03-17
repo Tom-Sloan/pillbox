@@ -116,15 +116,15 @@ void loop()
     if (bleuart.peek() == 'T'){
       Serial.print("Recieved message type: T");
       bleuart.write("T");
-      bleuart.read()
+      bleuart.read();
     }else if (bleuart.peek() == 'A' ){
       Serial.print("Recieved message type: A");
       bleuart.write("A");
-      bleuart.read()
+      bleuart.read();
     } else if (bleuart.peek() == 'R'){
       Serial.print("Recieved message type: R");
       bleuart.write("R");
-      bleuart.read()
+      bleuart.read();
     }
     uint8_t ch;
     ch = (uint8_t) bleuart.read();
