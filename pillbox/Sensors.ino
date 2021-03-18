@@ -2,8 +2,12 @@
 void initSensorIC(int location)
 {
   Adafruit_MCP23017 mcp;
-  mcp.begin(IOEX_ADDR[location]);      
-  for(int i = 0; i < 8; i++){
+  if(location  != 1){
+    mcp.begin(IOEX_ADDR[location]);      
+  }else{
+    mcp.begin();  
+  }
+  for(int i = 0; i < NUM_SENSORS; i++){
     mcp.pinMode(i, INPUT);
     mcp.pullUp(i, HIGH);  // turn on a 100K pullup internally
   }
@@ -29,7 +33,7 @@ void initSensorIC(int location)
     myservo.attach(servoPin); 
   }
   
-  for(int i = 0; i < 7; i++){
+  for(int i = 0; i < NUM_SENSORS; i++){
     lastBtnStates[location][i] = mcp.digitalRead(i);
     currentBtnStates[location][i] = mcp.digitalRead(i);
   }
@@ -54,6 +58,7 @@ void rowChange(int oldRowNum){
       Serial.println(tmp);
       if (oldRowNum+i < 4){
         initSensorIC(oldRowNum+i);
+        Serial.println("Here");
         openAllRow(oldRowNum+i);
       }
     }
@@ -64,10 +69,15 @@ void checkSensors()
 {
   bool changedState = false;
   for(int row = 0; row<numRows; row++){
-    for(int i = 0; i < 7; i++){
+    for(int i = 0; i < NUM_SENSORS; i++){
 
       int stat = ioex[row].digitalRead(i);
-      
+      Serial.print("Location: ");
+      Serial.print(row);
+      Serial.print("\t");
+      Serial.print(i);
+      Serial.print("\t");
+      Serial.println(stat);
       if (lastBtnStates[row][i] != stat){
         lastDebounceTime = millis();
       }

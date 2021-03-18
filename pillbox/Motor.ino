@@ -35,13 +35,13 @@ void lockedPosition(byte row){
 //open all
 void openAllRow(byte row){
   if (isServo){
-    myservo.write(positions_servo[7]);   
+    myservo.write(positions_servo[NUM_SENSORS]);   
   }else{
-    runStepper(row, finalPositions[7] + 100, true);
-    positions_stepper[row] = finalPositions[7];
+    runStepper(row, finalPositions[NUM_SENSORS] + 100, true);
+    positions_stepper[row] = finalPositions[NUM_SENSORS];
     Serial.println(row);
     Serial.print("Setting stepper to");
-    Serial.println(finalPositions[7]);
+    Serial.println(finalPositions[NUM_SENSORS]);
   }
 }
 
@@ -66,8 +66,8 @@ void runStepper(byte row, int numSteps, bool forward){
     ioex[row].digitalWrite(slp, LOW);
     if (positions_stepper[row] < finalPositions[0]){
       positions_stepper[row]=finalPositions[0];
-    }else if (positions_stepper[row] > finalPositions[7]){
-      positions_stepper[row]=finalPositions[7];
+    }else if (positions_stepper[row] > finalPositions[NUM_SENSORS]){
+      positions_stepper[row]=finalPositions[NUM_SENSORS];
     }
 }
 //Default microstep mode function

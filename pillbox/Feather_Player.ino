@@ -37,10 +37,13 @@ void playerTest(void)
   featherPlayer.stopPlaying();
 }
 
-bool startAlarm(int index)
+void startAlarm(int index)
 {
   Serial.print("Starting Alarm: ");
-  if (index > 1 && index < 15)
+  if (index == 15){
+    return;
+  }
+  if (index > 1 && index < 14)
   {
     
     String t = "/Alarms/alarm";

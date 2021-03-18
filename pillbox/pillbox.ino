@@ -67,9 +67,12 @@ Servo myservo;
 #define servoPin 15
 
 //Stepper
-const int stepsPerRevolution = 200;
 int positions_stepper[4];
-const int finalPositions[8] = {0, 815, 1630, 2445, 3260, 4075, 4890, 5705}; //Position 
+
+int finalPositions_long[8] = {0, 815, 1630, 2445, 3260, 4075, 4890, 5705}; //Position 
+int finalPositions_short[8] = {0, 228, 456, 684, 912,1140, 1368, 1605}; //Position 
+int* finalPositions = finalPositions_short;
+
 #define stp 7
 #define EN  8
 #define dirctn 9
@@ -84,9 +87,10 @@ bool moveOn = true;
 bool playedAlarm = true;
 
 // Sensor variables
-//TCA9534 ioex[4];
+#define NUM_SENSORS 7
+
 Adafruit_MCP23017 ioex[4];
-const int IOEX_ADDR[4] = {0x27, 0x26, 0x25, 0x24}; //0x30; // A0 = A1 = A2 = 0
+const int IOEX_ADDR[4] = {0x27, 0x26, 0x25, 0x24};  // A0 = A1 = A2 = 0
 int numRows = 1;
 bool lastBtnStates[4][7] = {
   {false, false, false, false},
@@ -121,7 +125,7 @@ void setup() {
   Serial.println("-----Starting Player------");
   playerInit();
   Serial.println("-----SD and Volume Check------");
-//  startAlarm(3);
+  startAlarm(3);
   // Only wish to start ble once.
   Serial.println("-----Starting BT------");
   initBLE();
@@ -136,8 +140,10 @@ void loop() {
   Serial.print("Time");
   Serial.println(rtc.now().unixtime());
   if (bleuart.available()) {
+    
     //adjust Time
     if (bleuart.peek() == 'A') {
+      Serial.println("A Section");
       bleuart.read();
       uint32_t unixTime = 0; 
       int value = 0;
@@ -151,17 +157,14 @@ void loop() {
     } else if (bleuart.peek() == 'T') { // Recieving an alarm time
       if (!dataUsed) {
         char a = bleuart.read();
-        Serial.println(a);
+        Serial.println("T Section");
         uint32_t unixTime = 0;
         int value = 0;
         while (bleuart.available()) {
           int val = bleuart.read() - 48;
           if (val >=0 && val <= 9){
             value = val;
-            Serial.print("val: ");
-            Serial.println(value);
             unixTime = unixTime * 10 + value;
-            Serial.println(unixTime);
           }
         }
 
@@ -175,38 +178,74 @@ void loop() {
 
     } else if (bleuart.peek() == 'R') { // Request data
       if (!dataUsed) {
-        while (bleuart.available())
-          bleuart.read();
+        Serial.println("R Section");
+        while (bleuart.available()){bleuart.read();}
         sendEvents("BLE");
       }
-    }
+    } else if (bleuart.peek() == 'U') { // Recieving an alarm time
+      if (!dataUsed) {
+        while (bleuart.available())
+          bleuart.read();
+        byte row = dataReceived.charAt(3)-'0';
+        if (row < numRows){
+          openAllRow(row);
+        }
+        Serial.print("U Section => Unlocked row: ");
+        Serial.println(row);
+      }
+    }else if (bleuart.peek() == 'M') { // Recieving an alarm time
+      if (!dataUsed) {
+        while (bleuart.available())
+          bleuart.read();
+        byte row = dataReceived.charAt(3)-'0';
+        byte coln = dataReceived.charAt(4) - '0';
+        if (row < numRows){
+          spotToOpen(row, coln);
+        }
+        Serial.print("M Section => Unlocked row: ");
+        Serial.print(row);
+        Serial.print("\t Coln: ");
+        Serial.println(coln);
+      }
+    } else if (bleuart.peek() == 'L') { // Recieving an alarm time
+      if (!dataUsed) {
+        while (bleuart.available())
+          bleuart.read();
+        byte row = dataReceived.charAt(3)-'0';
+        if (row < numRows){
+          lockedPosition(row);
+        }
+        Serial.print("L Section => locked row: ");
+        Serial.println(row);
+      }
+    }  else if (bleuart.peek() == 'P') { // Recieving an alarm time
+      if (!dataUsed) {
+        while (bleuart.available())
+          bleuart.read();
+        byte alarm = dataReceived.charAt(1)-'0';
+        startAlarm(alarm);
+        Serial.print("P Section => Played alarm: ");
+        Serial.println(alarm);
+      }
+    }  
     else { // Recieving an instruction
       dataReceived = "";
-      Serial.println("------------------------------------------");
-      while ( bleuart.available()  && bleuart.peek() != 'T' && bleuart.peek() != 'A' && bleuart.peek() != 'R') {
+      Serial.println("Recieved Message");
+      while ( bleuart.available()  && bleuart.peek() != 'T' && bleuart.peek() != 'A' && bleuart.peek() != 'R' && bleuart.peek() != 'U' && bleuart.peek() != 'M' && bleuart.peek() != 'L' && bleuart.peek() != 'P') {
 
         uint8_t ch;
         ch = (uint8_t) bleuart.read();
-        dataUsed = false;
-
-        Serial.write(ch);
-        Serial.print("\t");
-        Serial.println(ch);
-
-        dataReceived += ch  - 48;
+        if (ch > 11){
+          dataUsed = false;
+          dataReceived += ch  - 48;
+        }
       }
 
       if (!dataUsed) {
-        Serial.println("------------------------------------------");
-
-        // Print Data
-        for (int i = 0; i <= dataReceived.length(); i++) {
-          char ch = dataReceived.charAt(i);
-          Serial.println(ch);
-        }
+        Serial.println("Processing message");
 
         // DO EVENT
-        if (bleuart.peek() != 'T' && bleuart.peek() != 'A' && bleuart.peek() != 'R')
+        if (bleuart.peek() != 'T' && bleuart.peek() != 'A' && bleuart.peek() != 'R' && bleuart.peek() != 'U' && bleuart.peek() != 'M' && bleuart.peek() != 'L' && bleuart.peek() != 'P')
           processMessage(dataReceived);
       }
     }
@@ -215,7 +254,7 @@ void loop() {
   if (Serial.available())
   {
     delay(2);
-    if (Serial.peek()-'0'  >= 1 && Serial.peek()-'0' <= 7) {
+    if (Serial.peek()-'0'  >= 1 && Serial.peek()-'0' <= NUM_SENSORS) {
       char user_input;
       user_input = Serial.read();
       Serial.print("User Input: ");
@@ -223,9 +262,23 @@ void loop() {
       Serial.println("GOING UP");
       spotToOpen(0, user_input - '0');
 
+    } else if (Serial.peek() == 'B') {
+      Serial.println("Setting Long");
+      finalPositions = finalPositions_long; 
+      for (int i = 0; i < sizeof(finalPositions); i++){
+        Serial.println(finalPositions[i]);
+      }
+      
+    } else if (Serial.peek() == 'S') {
+      Serial.println("Setting Short");
+      finalPositions = finalPositions_short;
+      for (int i = 0; i < sizeof(finalPositions); i++){
+        Serial.println(finalPositions[i]);
+      } 
     } else if (Serial.find('R')) {
       sendEvents("SERIAL");
-    }
+      
+    } 
     while (Serial.available()) {
       Serial.read();
     }
@@ -246,7 +299,8 @@ void loop() {
       moveOn = true;
       playedAlarm = false;
     }
-
+    
+// Uncomment for music control
 //    if (!playedAlarm && (rtc.now().unixtime() - 10 <= alarmTime && alarmTime <= rtc.now().unixtime() + 10)){
 //      byte alarmNoise = alarmData.charAt(1) - '0';
 //      startAlarm(alarmNoise);
@@ -270,4 +324,5 @@ void loop() {
       }
     }
   }
+  delay(1000);
 }

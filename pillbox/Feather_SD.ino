@@ -117,7 +117,7 @@ void getNextAlarm(){
         }
 //        else if(alarmTime == 0 && subTime <= rtc.now().unixtime() && row < numRows){
 //          subTime  =  rtc.now().unixtime() + 40 ;
-//          int ran = random(0,7);
+//          int ran = random(0,NUM_SENSORS);
 //          
 //          line_str = "1010";
 //          line_str += ran;
