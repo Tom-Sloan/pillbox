@@ -126,11 +126,14 @@ void setup() {
   playerInit();
   Serial.println("-----SD and Volume Check------");
   startAlarm(3);
+
+  Serial.println("-----Starting RTC------");
+  RTCInit(); //Note rtc.begin calls wire.begin
+  
   // Only wish to start ble once.
   Serial.println("-----Starting BT------");
   initBLE();
-  Serial.println("-----Starting RTC------");
-  RTCInit(); //Note rtc.begin calls wire.begin
+
   Serial.println("-----Initializing Device------");
   set_base_setup();
   Serial.println("-----Setup DONE------");
@@ -218,7 +221,7 @@ void loop() {
         Serial.print("L Section => locked row: ");
         Serial.println(row);
       }
-    }  else if (bleuart.peek() == 'P') { // Recieving an alarm time
+    }  else if (bleuart.peek() == 'P') {
       if (!dataUsed) {
         while (bleuart.available())
           bleuart.read();
@@ -260,7 +263,7 @@ void loop() {
       Serial.print("User Input: ");
       Serial.println(user_input - '0');
       Serial.println("GOING UP");
-      spotToOpen(0, user_input - '0');
+      spotToOpen(1, user_input - '0');
 
     } else if (Serial.peek() == 'B') {
       Serial.println("Setting Long");
