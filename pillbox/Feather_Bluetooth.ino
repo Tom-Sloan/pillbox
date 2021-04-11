@@ -1,3 +1,5 @@
+
+/*---------------ADAFRUIT functions from BLEUART example-------------------------*/
 void initBLE()
 {
   // Setup the BLE LED to be enabled on CONNECT
@@ -95,7 +97,9 @@ void disconnect_callback(uint16_t conn_handle, uint8_t reason)
   Serial.println();
   Serial.print("Disconnected, reason = 0x"); Serial.println(reason, HEX);
 }
+/*---------------ADAFRUIT functions from BLEUART example end-------------------------*/
 
+//used for row detection. doesn't do much otherwise
 void processMessage(String dataReceived)
 {
   if (dataReceived.charAt(2)-'0' != numRows){

@@ -1,3 +1,9 @@
+//actions.txt -> contains all alarms
+//events.txt  -> contains all slot unlocking events
+//setup.txt   -> conatins 1 line which is in command structure. Used to get the most recent rowNum (number of modules)
+
+
+//added a command to action.txt, calls get nextAlarm to possibly update the slot that should be unlocked next
 void addToActions(String action) {
   File actionFile = SD.open("actions.txt", FILE_WRITE);
   if (actionFile){
@@ -8,6 +14,8 @@ void addToActions(String action) {
     getNextAlarm();
   }
 }
+
+//add a slot unlocing event to events.txt
 void addToEvents(int row, int column) {
   Serial.print("Datafile: ");
   File dataFile = SD.open("events.txt", FILE_WRITE);
@@ -26,6 +34,7 @@ void addToEvents(int row, int column) {
   }
 }
 
+//Sends data to requesting device
 void sendEvents(String comMethod) {
   Serial.println("Sending Data");
   if (SD.exists("events.txt")) {
@@ -62,7 +71,7 @@ void sendEvents(String comMethod) {
   dataUsed = true; 
 }
 
-
+//sets up the inital requirements of the system
 void set_base_setup() {
   
   if (SD.exists("setup.txt")) {
@@ -112,9 +121,17 @@ void getNextAlarm(){
         if ((alarmTime == 0 || alarmTime>subTime) && subTime >= rtc.now().unixtime() && row < numRows){
           alarmTime = subTime;
           alarmData = line_str;
+          byte interval = line_str.charAt(0)-'0';
+          if(interval==0){
+            deltaTime = 1800 - 10;
+          }else{
+            deltaTime = interval * 5 *  60 - 10;
+          }
+            
           Serial.print("Next alarm has been changed to \t");
           Serial.println(alarmData);
         }
+        //uncomment for easy alarm setting, sets the alarm 40 seconds in the future
 //        else if(alarmTime == 0 && subTime <= rtc.now().unixtime() && row < numRows){
 //          subTime  =  rtc.now().unixtime() + 40 ;
 //          int ran = random(0,NUM_SENSORS);

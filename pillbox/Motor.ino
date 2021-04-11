@@ -1,4 +1,5 @@
 
+//opens a specified slot
 void spotToOpen(byte row, byte coln){
   if (isServo){
     myservo.write(positions_servo[coln]);  
@@ -14,6 +15,7 @@ void spotToOpen(byte row, byte coln){
   }
 }
 
+//locks a row
 void lockedPosition(byte row){
   Serial.println("Setting Locked row");
   
@@ -32,7 +34,7 @@ void lockedPosition(byte row){
   }
 }
 
-//open all
+//open all slots in a row
 void openAllRow(byte row){
   if (isServo){
     myservo.write(positions_servo[NUM_SENSORS]);   
@@ -45,6 +47,7 @@ void openAllRow(byte row){
   }
 }
 
+//moves the arm of a row to a desired position 
 void runStepper(byte row, int numSteps, bool forward){
    if (forward){
     ioex[row].digitalWrite(dirctn, LOW); 
@@ -69,31 +72,4 @@ void runStepper(byte row, int numSteps, bool forward){
     }else if (positions_stepper[row] > finalPositions[NUM_SENSORS]){
       positions_stepper[row]=finalPositions[NUM_SENSORS];
     }
-}
-//Default microstep mode function
-void StepForwardDefault()
-{
-  
-  Serial.println("Moving forward at default step mode.");
-  if(isServo){
-    myservo.write(180);  
-  }else{
-    runStepper(0, 1000, true);
-  }
-
-  Serial.println("Enter new option");
-  Serial.println();
-}
-
-//Reverse default microstep mode function
-void ReverseStepDefault()
-{
-  Serial.println("Moving in reverse at default step mode.");
-  if(isServo){
-    myservo.write(0);  
-  }else{
-    runStepper(0, 1000, false);
-  }
-  Serial.println("Enter new option");
-  Serial.println();
 }

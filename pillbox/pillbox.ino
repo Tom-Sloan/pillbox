@@ -1,6 +1,15 @@
-//----------------------------------------NOTES----------------------------------------
-//1. must remove tx pin from feather connection
-//2.
+//----------------------------------------TODO----------------------------------------
+//1. turn special characters into array
+//2. give serial more programming ability
+//3. change to interupts on slot pin detection
+//4. add support for multiple slots to be open at once (max theorically is 1 per row)
+//5. change alarm to non-blocking
+//6. move row detection to loop if to it always runs not only when there is a non special character in byte 5 (byte 6 in report)
+//7. change event recording to include the interval and alarm if there was one (currently records as 00)
+//8. make the use of the variable dataUsed more consistant
+
+//----------------------------------------TODO----------------------------------------
+//1. Servo mode is no modular
 
 //----------------------------------------Libraries----------------------------------------
 // For Bluetooth controls
@@ -59,6 +68,7 @@ Adafruit_VS1053_FilePlayer featherPlayer = Adafruit_VS1053_FilePlayer(VS1053_RES
 
 
 // Motor Variables (IC and Motor)
+//This project was built to support a servo motor and a stepper, therefore use this var to toggle
 bool isServo = false;
 
 //Servo
@@ -69,29 +79,34 @@ Servo myservo;
 //Stepper
 int positions_stepper[4];
 
-int finalPositions_long[8] = {0, 815, 1630, 2445, 3260, 4075, 4890, 5705}; //Position 
-int finalPositions_short[8] = {0, 228, 456, 684, 912,1140, 1368, 1605}; //Position 
+int finalPositions_long[8] = {0, 815, 1630, 2445, 3260, 4075, 4890, 5705}; //Position
+int finalPositions_short[8] = {0, 228, 456, 684, 912, 1140, 1368, 1605}; //Position
 int* finalPositions = finalPositions_short;
 
-#define stp 7
-#define EN  8
-#define dirctn 9
-#define slp 10
-#define MS1 11
-#define MS2 12
+//Control variables for motor driver
+#define stp 7 //on going high, motor moves 1 step
+#define EN  8 //if off then the motor doesn't move
+#define dirctn 9 //High goes 1 way, low another
+#define slp 10 //if low the motor driver is off and uses much less power
+#define MS1 11 //to control step size
+#define MS2 12 // to control step size
 
-
-int alarmTime = 0;
-String alarmData = "";
-bool moveOn = true;
-bool playedAlarm = true;
+//Alarm controling variables
+int deltaTime = 1790; //Variable for control byte 1 (time to open in seconds)
+int alarmTime = 0; // The time of the next alarm
+String alarmData = ""; // Used to keep track of control bytes 0-5
+bool moveOn = true; // Used to let the system know that the next alarm is known and to not look for another unless a message is recieved.
+bool playedAlarm = true; // lets the system know if the slot has been unlocked
 
 // Sensor variables
-#define NUM_SENSORS 7
+#define NUM_SENSORS 7 //bc i made a prototype with 3 sensors
 
-Adafruit_MCP23017 ioex[4];
-const int IOEX_ADDR[4] = {0x27, 0x26, 0x25, 0x24};  // A0 = A1 = A2 = 0
-int numRows = 1;
+//bc there is a max of 4 modules I hard coded this stuff, but if you make the arrays dynamic then the entire system will still work. I did set a hard coded limit on number of rows somewhere too (just search for a 4)
+Adafruit_MCP23017 ioex[4]; //array that contains multiplexer objects
+const int IOEX_ADDR[4] = {0x27, 0x26, 0x25, 0x24};  // possible addresses for the mux that this system supports
+int numRows = 1; // current number of rows, used to see if there had been a change.
+
+//contains the last btn states for the slots. See the btn debouncing arduino example for how it works.
 bool lastBtnStates[4][7] = {
   {false, false, false, false},
   {false, false, false, false},
@@ -104,52 +119,55 @@ bool currentBtnStates[4][7] = {
   {false, false, false, false},
   {false, false, false, false}
 };
-
-
 long lastDebounceTime = 0; // the last time the output pin was toggled
 long debounceDelay = 50; // the debounce time; increase if the output flickers
 
-//Time
+//Time object for RTC
 RTC_DS3231 rtc;
-char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 
 //----------------------------------------END Variable Declaration----------------------------------------
 
 
 
 //----------------------------------------Default Functions----------------------------------------
+//Reset function. Call it with 'resetFunc();' and the device restarts.
+void(* resetFunc) (void) = 0;
+
 void setup() {
+  //Comments used to make debugging easier. You can remove to make interaction with desktop easier
   Serial.begin(115200);
   Serial.println("\t Pillbox Serial");
   Serial.println("------------------------------\n");
   Serial.println("-----Starting Player------");
-  playerInit();
+  playerInit(); //Sets up music and sd card
   Serial.println("-----SD and Volume Check------");
-  startAlarm(3);
+  startAlarm(3); //test beep to show that its working. Can remove
 
   Serial.println("-----Starting RTC------");
-  RTCInit(); //Note rtc.begin calls wire.begin
-  
-  // Only wish to start ble once.
+  RTCInit(); //Sets up the rtc
+
   Serial.println("-----Starting BT------");
-  initBLE();
+  initBLE(); //Sets up ble
 
   Serial.println("-----Initializing Device------");
-  set_base_setup();
+  set_base_setup(); //Sets up the required defaults (like next alarm, number of modules etc)
   Serial.println("-----Setup DONE------");
 }
 
 void loop() {
   Serial.print("Time");
   Serial.println(rtc.now().unixtime());
+
+  //For ble communication. The arduino checks to see if there is a message
   if (bleuart.available()) {
-    
+
     //adjust Time
     if (bleuart.peek() == 'A') {
       Serial.println("A Section");
-      bleuart.read();
-      uint32_t unixTime = 0; 
+      bleuart.read(); // peek() doesn't remove the letter from the buffer so we remove it here
+      uint32_t unixTime = 0;
       int value = 0;
+      //gets the values from bytes 7-15 into the unix time stamp interger format. this doesn't use dataREcieved bc I wrote it first
       while (bleuart.available()) {
         value = bleuart.read() - 48;
         unixTime = unixTime * 10 + value;
@@ -157,7 +175,8 @@ void loop() {
       unixTime = (unixTime - value) / 10;
       rtc.adjust(DateTime(unixTime));
 
-    } else if (bleuart.peek() == 'T') { // Recieving an alarm time
+      // Recieving an alarm time
+    } else if (bleuart.peek() == 'T') {
       if (!dataUsed) {
         char a = bleuart.read();
         Serial.println("T Section");
@@ -165,7 +184,7 @@ void loop() {
         int value = 0;
         while (bleuart.available()) {
           int val = bleuart.read() - 48;
-          if (val >=0 && val <= 9){
+          if (val >= 0 && val <= 9) {
             value = val;
             unixTime = unixTime * 10 + value;
           }
@@ -178,31 +197,37 @@ void loop() {
         Serial.println(action);
         addToActions(action);
       }
-
-    } else if (bleuart.peek() == 'R') { // Request data
+      // Request data
+    } else if (bleuart.peek() == 'R') {
       if (!dataUsed) {
         Serial.println("R Section");
-        while (bleuart.available()){bleuart.read();}
+        while (bleuart.available()) {
+          bleuart.read();
+        }
         sendEvents("BLE");
       }
-    } else if (bleuart.peek() == 'U') { // Recieving an alarm time
+
+      //Unlock a row
+    } else if (bleuart.peek() == 'U') {
       if (!dataUsed) {
         while (bleuart.available())
           bleuart.read();
-        byte row = dataReceived.charAt(3)-'0';
-        if (row < numRows){
+        byte row = dataReceived.charAt(3) - '0';
+        if (row < numRows) {
           openAllRow(row);
         }
         Serial.print("U Section => Unlocked row: ");
         Serial.println(row);
       }
-    }else if (bleuart.peek() == 'M') { // Recieving an alarm time
+
+      //Unlock a slot
+    } else if (bleuart.peek() == 'M') { // Recieving an alarm time
       if (!dataUsed) {
         while (bleuart.available())
           bleuart.read();
-        byte row = dataReceived.charAt(3)-'0';
+        byte row = dataReceived.charAt(3) - '0';
         byte coln = dataReceived.charAt(4) - '0';
-        if (row < numRows){
+        if (row < numRows) {
           spotToOpen(row, coln);
         }
         Serial.print("M Section => Unlocked row: ");
@@ -210,27 +235,32 @@ void loop() {
         Serial.print("\t Coln: ");
         Serial.println(coln);
       }
+
+      //Lock a row
     } else if (bleuart.peek() == 'L') { // Recieving an alarm time
       if (!dataUsed) {
         while (bleuart.available())
           bleuart.read();
-        byte row = dataReceived.charAt(3)-'0';
-        if (row < numRows){
+        byte row = dataReceived.charAt(3) - '0';
+        if (row < numRows) {
           lockedPosition(row);
         }
         Serial.print("L Section => locked row: ");
         Serial.println(row);
       }
+
+      //Play an alarm
     }  else if (bleuart.peek() == 'P') {
       if (!dataUsed) {
         while (bleuart.available())
           bleuart.read();
-        byte alarm = dataReceived.charAt(1)-'0';
+        byte alarm = dataReceived.charAt(1) - '0';
         startAlarm(alarm);
         Serial.print("P Section => Played alarm: ");
         Serial.println(alarm);
       }
-    }  
+    }
+    //
     else { // Recieving an instruction
       dataReceived = "";
       Serial.println("Recieved Message");
@@ -238,7 +268,7 @@ void loop() {
 
         uint8_t ch;
         ch = (uint8_t) bleuart.read();
-        if (ch > 11){
+        if (ch > 11) {
           dataUsed = false;
           dataReceived += ch  - 48;
         }
@@ -254,10 +284,11 @@ void loop() {
     }
   }
 
+  //For serial communication. The arduino checks to see if there is a message
   if (Serial.available())
   {
     delay(2);
-    if (Serial.peek()-'0'  >= 1 && Serial.peek()-'0' <= NUM_SENSORS) {
+    if (Serial.peek() - '0'  >= 1 && Serial.peek() - '0' <= NUM_SENSORS) {
       char user_input;
       user_input = Serial.read();
       Serial.print("User Input: ");
@@ -267,32 +298,35 @@ void loop() {
 
     } else if (Serial.peek() == 'B') {
       Serial.println("Setting Long");
-      finalPositions = finalPositions_long; 
-      for (int i = 0; i < sizeof(finalPositions); i++){
+      finalPositions = finalPositions_long;
+      for (int i = 0; i < sizeof(finalPositions); i++) {
         Serial.println(finalPositions[i]);
       }
-      
+
     } else if (Serial.peek() == 'S') {
       Serial.println("Setting Short");
       finalPositions = finalPositions_short;
-      for (int i = 0; i < sizeof(finalPositions); i++){
+      for (int i = 0; i < sizeof(finalPositions); i++) {
         Serial.println(finalPositions[i]);
-      } 
+      }
     } else if (Serial.find('R')) {
       sendEvents("SERIAL");
-      
-    } 
+
+    }
     while (Serial.available()) {
       Serial.read();
     }
   }
 
+  //Checks to see if the a slot has been opened
   checkSensors();
-  if (rtc.now().unixtime() - 20 <= alarmTime && alarmTime <= rtc.now().unixtime() + 20 ){ //1790
-    if (!moveOn){
+
+  //Checks to see which/if slot should be unlocked
+  if (rtc.now().unixtime() - deltaTime <= alarmTime && alarmTime <= rtc.now().unixtime() + deltaTime ) { //1790
+    if (!moveOn) {
       byte row = alarmData.charAt(3) - '0';
       byte coln = alarmData.charAt(4) - '0';
-      
+
       Serial.print("Opening for alarm at: ");
       Serial.print(row);
       Serial.print("\t");
@@ -302,30 +336,29 @@ void loop() {
       moveOn = true;
       playedAlarm = false;
     }
-    
-// Uncomment for music control
-//    if (!playedAlarm && (rtc.now().unixtime() - 10 <= alarmTime && alarmTime <= rtc.now().unixtime() + 10)){
-//      byte alarmNoise = alarmData.charAt(1) - '0';
-//      startAlarm(alarmNoise);
-//      playedAlarm = true;
-//    }
+    //play alarm
+    if (!playedAlarm && (rtc.now().unixtime() - 10 <= alarmTime && alarmTime <= rtc.now().unixtime() + 10)) {
+      byte alarmNoise = alarmData.charAt(1) - '0';
+      startAlarm(alarmNoise);
+      playedAlarm = true;
+    }
 
-  }else{
-    if(moveOn){
-      if (alarmData != ""){
+  } else {
+    //used to make the system only look for an alarm if the next one is not known
+    if (moveOn) {
+      //used so if there is no alarm in actions.txt it doesn't go through this check needlessly
+      if (alarmData != "") {
         Serial.println("Starting Alarm Set");
         byte row = alarmData.charAt(3) - '0';
         Serial.println("Got row");
         lockedPosition(row); //Locking previous row
         Serial.println("setLocked Pos");
-//        alarmTime = 0;//REMOVE
         getNextAlarm();
         Serial.println("got next alarm");
-        Serial.println(alarmData);     
+        Serial.println(alarmData);
         moveOn = false;
-        
+
       }
     }
   }
-  delay(1000);
 }

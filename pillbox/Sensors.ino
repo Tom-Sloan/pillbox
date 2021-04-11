@@ -1,16 +1,24 @@
-
+//Sets up the sensors and the motor driver/servo
 void initSensorIC(int location)
 {
+  
   Adafruit_MCP23017 mcp;
+
+  // the breakout boards bought on amazon have a bug, remove this if not using them. 
+  // or maybe its the adafruit library. Anyways this lets you use multiple modules
   if(location  != 1){
     mcp.begin(IOEX_ADDR[location]);      
   }else{
     mcp.begin();  
   }
+
+  // sets up the pullups so i2c works, you can probably remove this if 
   for(int i = 0; i < NUM_SENSORS; i++){
     mcp.pinMode(i, INPUT);
     mcp.pullUp(i, HIGH);  // turn on a 100K pullup internally
   }
+  
+  //motor driver 
   if(!isServo){
 
     pinMode(stp, OUTPUT);
@@ -29,10 +37,12 @@ void initSensorIC(int location)
     mcp.digitalWrite(EN, HIGH);
     mcp.digitalWrite(slp, LOW);
 
+  //Servo 
   }else{
     myservo.attach(servoPin); 
   }
-  
+
+  //Adding sensors
   for(int i = 0; i < NUM_SENSORS; i++){
     lastBtnStates[location][i] = mcp.digitalRead(i);
     currentBtnStates[location][i] = mcp.digitalRead(i);
@@ -42,10 +52,13 @@ void initSensorIC(int location)
   Serial.println("Done add");
 }
 
+// for when the number of module changes
+// calls to to initlize the new sensors and motor driver and sets the row to unlock 
 void rowChange(int oldRowNum){
 
   if (oldRowNum<numRows){
-    //add
+    
+    // add 
     Serial.println("Pre add");
     for (int i = 0; i<numRows-oldRowNum;i++){
       Serial.println("adding");
@@ -65,6 +78,7 @@ void rowChange(int oldRowNum){
   }
 }
 
+// Checks the sensors for a slot unlocking event, debouncing method
 void checkSensors()
 {
   bool changedState = false;

@@ -1,3 +1,5 @@
+
+//Sets up sd card and the music player. I never use the return value so ignore it
 bool playerInit(void)
 {
   if (! featherPlayer.begin()) { // initialise the music player
@@ -14,6 +16,7 @@ bool playerInit(void)
   // list files
   printDirectory(baseDir, 0);
 
+  //lower number is louder
   setVolume(10);
 }
 
@@ -23,7 +26,7 @@ bool setVolume(int volume)
   featherPlayer.setVolume(volume,volume);
 }
 
-
+//used as the default noise if there is a bug in one of the mp3 songs.
 void playerTest(void)
 {
   featherPlayer.sineTest(0x44, 2000);
@@ -37,6 +40,7 @@ void playerTest(void)
   featherPlayer.stopPlaying();
 }
 
+//Used to pick alarm noise. index == 15 is no alarm
 void startAlarm(int index)
 {
   Serial.print("Starting Alarm: ");
@@ -68,7 +72,7 @@ void printDirectory(String dir_t, int numTabs)
    File dir = SD.open(dir_t);
    printDirectoryHelper(dir, numTabs);
 }
-
+//Prints the directories on the sd card. Used for debugging
 void printDirectoryHelper(File dir, int numTabs) 
 {
    while(true) {
