@@ -1,9 +1,9 @@
 # pillbox
 *Folders*
-Desktop App               -> the code for the windows 10 app
-Phone App                 -> the code for the android phone app
-Pillbox Hardware          -> all files for the hardware (not incl. arduino code)
-Pillbox Software          -> pillbox arduino code
+\nDesktop App               -> the code for the windows 10 app
+\nPhone App                 -> the code for the android phone app
+\nPillbox Hardware          -> all files for the hardware (not incl. arduino code)
+\nPillbox Software          -> pillbox arduino code
 
 *Files*
 final_video               -> final demo video
