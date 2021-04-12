@@ -35,6 +35,7 @@ void lockedPosition(byte row){
 }
 
 //open all slots in a row
+//this is also the reset function called to set the initial motor position
 void openAllRow(byte row){
   if (isServo){
     myservo.write(positions_servo[NUM_SENSORS]);   

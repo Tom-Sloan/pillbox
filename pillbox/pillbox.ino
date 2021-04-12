@@ -2,14 +2,23 @@
 //1. turn special characters into array
 //2. give serial more programming ability
 //3. change to interupts on slot pin detection
-//4. add support for multiple slots to be open at once (max theorically is 1 per row)
+//4. add support for multiple rows to have a slot unlocked at once (max theorically is 1 per row)
 //5. change alarm to non-blocking
 //6. move row detection to loop if to it always runs not only when there is a non special character in byte 5 (byte 6 in report)
 //7. change event recording to include the interval and alarm if there was one (currently records as 00)
 //8. make the use of the variable dataUsed more consistant
+//9. I removed the calls to the restart function (default function 1) for debugging perposes
 
-//----------------------------------------TODO----------------------------------------
-//1. Servo mode is no modular
+//----------------------------------------Notes----------------------------------------
+//1. Servo mode is not modular
+//2. There are a lot of serial.print calls. These are not required
+
+/* References
+ * https://www.ti.com/lit/ds/symlink/drv8834.pdf?ts=1618235438904
+ * https://github.com/adafruit/Adafruit-MCP23017-Arduino-Library
+ * https://learn.adafruit.com/bluefruit-nrf52-feather-learning-guide/bleuart
+ * https://github.com/adafruit/Adafruit_VS1053_Library/blob/master/Adafruit_VS1053.h
+ */
 
 //----------------------------------------Libraries----------------------------------------
 // For Bluetooth controls

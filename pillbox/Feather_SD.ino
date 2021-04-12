@@ -103,6 +103,7 @@ void set_base_setup() {
   getNextAlarm();
 }
 
+//gets the next alarm by reading in actions.txt
 void getNextAlarm(){
   Serial.println("Setting next alarm");
   if (SD.exists("actions.txt")) {
