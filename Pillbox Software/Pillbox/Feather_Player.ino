@@ -1,0 +1,100 @@
+
+//Sets up sd card and the music player. I never use the return value so ignore it
+bool playerInit(void)
+{
+  if (! featherPlayer.begin()) { // initialise the music player
+     Serial.println(F("Couldn't find VS1053, do you have the right pins defined?"));
+     return false;
+  }
+  Serial.println(F("VS1053 found"));
+  if (!SD.begin(CARDCS)) {
+    Serial.println(F("SD failed, or not present"));
+    return false;
+  }
+  Serial.println("SD OK!");
+  
+  // list files
+  printDirectory(baseDir, 0);
+
+  //lower number is louder
+  setVolume(10);
+}
+
+// Set volume for left, right channels. lower numbers == louder volume!
+bool setVolume(int volume)
+{
+  featherPlayer.setVolume(volume,volume);
+}
+
+//used as the default noise if there is a bug in one of the mp3 songs.
+void playerTest(void)
+{
+  featherPlayer.sineTest(0x44, 2000);
+  setVolume(100);
+  featherPlayer.sineTest(0x44, 2000);
+  setVolume(10);
+  featherPlayer.sineTest(0x44, 2000);
+  setVolume(100);
+  featherPlayer.sineTest(0x44, 2000);
+  setVolume(10);
+  featherPlayer.stopPlaying();
+}
+
+//Used to pick alarm noise. index == 15 is no alarm
+void startAlarm(int index)
+{
+  Serial.print("Starting Alarm: ");
+  if (index == 15){
+    return;
+  }
+  if (index > 1 && index < 14)
+  {
+    
+    String t = "/Alarms/alarm";
+    t += index;
+    t += ".mp3"; 
+    Serial.print("indexed -> ");
+    bool a = featherPlayer.playFullFile(t.c_str());
+    Serial.println(t);
+    Serial.println(a);
+  }else
+  {
+    Serial.print("Test ");
+    playerTest();
+    Serial.println("Finished");
+  }
+}
+
+
+/// File listing helper
+void printDirectory(String dir_t, int numTabs) 
+{
+   File dir = SD.open(dir_t);
+   printDirectoryHelper(dir, numTabs);
+}
+//Prints the directories on the sd card. Used for debugging
+void printDirectoryHelper(File dir, int numTabs) 
+{
+   while(true) {
+     
+     File entry =  dir.openNextFile();
+     if (! entry) {
+       // no more files
+       //Serial.println("**nomorefiles**");
+       break;
+     }
+     for (uint8_t i=0; i<numTabs; i++) {
+       Serial.print('\t');
+     }
+     Serial.print(entry.name());
+     if (entry.isDirectory()) {
+       Serial.println("/");
+       printDirectoryHelper(entry, numTabs+1);
+     } else {
+       // files have sizes, directories do not
+       Serial.print("\t\t");
+       Serial.println(entry.size(), DEC);
+     }
+     entry.close();
+   }
+}
