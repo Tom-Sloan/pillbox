@@ -1,0 +1,20 @@
+﻿<Application x:Class="SmartPillBox.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:SmartPillBox"
+             xmlns:views="clr-namespace:SmartPillBox.Views"
+             xmlns:viewmodels="clr-namespace:SmartPillBox.ViewModels"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <DataTemplate DataType="{x:Type viewmodels:MedicationHistoryViewModel}">
+            <views:MedicationHistoryView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:PillSchedulerViewModel}">
+            <views:PillSchedulerView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:PillScheduleViewModel}">
+            <views:PillScheduleView/>
+        </DataTemplate>
+
+    </Application.Resources>
+</Application>
