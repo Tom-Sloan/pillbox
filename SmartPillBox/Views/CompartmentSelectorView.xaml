@@ -1,0 +1,23 @@
+﻿<UserControl x:Class="SmartPillBox.Views.CompartmentSelectorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SmartPillBox.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="30" d:DesignWidth="210">
+    <ItemsControl Margin="10" Background="White" ItemsSource="{Binding Shape}">
+        <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+                <UniformGrid Rows="{Binding Rows}" Columns="7"/>
+            </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+            <DataTemplate>
+                <Border BorderBrush="DimGray" BorderThickness=".75">
+                    <ToggleButton Grid.Column="0" Content="{Binding Display}" IsChecked="{Binding Selected}" IsEnabled="{Binding Enabled}" MinWidth="30"/>
+                </Border>
+            </DataTemplate>
+        </ItemsControl.ItemTemplate>
+    </ItemsControl>
+</UserControl>
