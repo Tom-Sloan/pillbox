@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SmartPillBox.Models.UARTMessages;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO.Ports;
@@ -21,66 +22,75 @@ namespace SmartPillBox.Connections
             get { return _serialPort; }
             set { _serialPort = value; NotifyPropertyChanged("serialPort"); }
         }
-        private SerialPort _serialPort;
+        private SerialPort _serialPort = new SerialPort();
 
         /**
          * Stores usage data provided by the pillbox.
          * data is stored as unix time stamps (doubles) - make class?
          */
-        public HashSet<double> PillBoxData
+        public HashSet<string> PillBoxData
         {
             get { return _PillBoxData; }
             set { _PillBoxData = value; NotifyPropertyChanged("serialPort"); }
         }
-        private HashSet<double> _PillBoxData;
+        private HashSet<string> _PillBoxData = new HashSet<string>();
 
 
         public bool Connect()
         {
-            try 
+            if (!Port.IsOpen)
             {
-                Port.PortName = "COM3";
-                Port.Parity = Parity.None;
-                Port.Handshake = Handshake.None;
-                Port.BaudRate = 300;
-                Port.DataBits = 8;
-                Port.StopBits = StopBits.One;
-                Port.ReceivedBytesThreshold = 576;
+                try
+                {
+                    Port.PortName = "COM3";
+                    Port.Parity = Parity.None;
+                    Port.Handshake = Handshake.None;
+                    Port.BaudRate = 115200;
+                    Port.DataBits = 8;
+                    Port.StopBits = StopBits.One;
 
-                Port.DataReceived += Port_DataReceived;
-                Port.ErrorReceived += Port_Error;
+                    Port.DataReceived += Port_DataReceived;
+                    Port.ErrorReceived += Port_Error;
 
 
-                Port.Open();
-                return true;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
+                    Port.Open();
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+                return false;
             }
             return false;
+            
         }
 
-        private void WriteToSerial(byte[] data)
+        private void WriteToSerial(MessageBase data)
         {
-            Port.Write(data, 0, PACKET_LENGTH);
+            //Port.Write(data.ToBytes(), 0, PACKET_LENGTH);
+            var message = data.ToString();
+            Console.WriteLine(message);
+            Port.Write(message);
         }
+
 
         private void Port_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             // Read all the incoming data in the port's buffer (timestamps)
-            var data = (Port.ReadExisting());
-            
+            var data = Port.ReadExisting();
             //split timestamps into an array by the comma between each
-            var splitData = data.Split(',');
+            var splitData = data.Split('\n');
 
             foreach (string s in splitData)
             {
                 //check format of message using regex?
-
-                var timeStamp = Convert.ToDouble(s);
-                PillBoxData.Add(timeStamp);
+                if(s.Length == 16)
+                {
+                    PillBoxData.Add(s);
+                }                
             }
+            Console.WriteLine("Size of PillBoxData in UsbConn: " + PillBoxData.Count);
         }
 
         private void Port_Error(object sender, SerialErrorReceivedEventArgs e)
@@ -98,32 +108,8 @@ namespace SmartPillBox.Connections
 
         public void AskForUsageData()
         {
-            byte[] message = new byte[16];
-            //free blocks
-            message[0] = 0;
-            message[1] = 0;
-            message[2] = 0;
-
-            //row and col can be left empty
-            message[3] = 0;
-            message[4] = 0;
-
-            //control byte set to ask for timestamps - "T"?
-            message[5] = 84;
-
-            //timestamp - can be left as 0 for each
-            message[6] = 0;
-            message[7] = 0;
-            message[8] = 0;
-            message[9] = 0;
-            message[10] = 0;
-            message[11] = 0;
-            message[12] = 0;
-            message[13] = 0;
-            message[14] = 0;
-            message[15] = 0;
-
-            WriteToSerial(message);
+            MessageBase message = new GetMedicationHistoryMessage();
+            WriteToSerial(message);           
         }
 
         #region Notify

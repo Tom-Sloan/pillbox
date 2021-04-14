@@ -71,6 +71,14 @@
     <Compile Include="Models\PillBoxShape.cs" />
     <Compile Include="Models\PillCompartmentModel.cs" />
     <Compile Include="Models\PillModel.cs" />
+    <Compile Include="Models\UARTMessages\GetMedicationHistoryMessage.cs" />
+    <Compile Include="Models\UARTMessages\LockRowMessage.cs" />
+    <Compile Include="Models\UARTMessages\MessageBase.cs" />
+    <Compile Include="Models\UARTMessages\OpenCompartmentMessage.cs" />
+    <Compile Include="Models\UARTMessages\PlayAlarmMessage.cs" />
+    <Compile Include="Models\UARTMessages\SetAlarmMessage.cs" />
+    <Compile Include="Models\UARTMessages\SetTimeMessage.cs" />
+    <Compile Include="Models\UARTMessages\UnlockRowMessage.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
     <Compile Include="ViewModels\MedicationHistoryViewModel.cs" />
