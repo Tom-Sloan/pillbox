@@ -1,6 +1,6 @@
 # pillbox
 *Folders*
-<br />Desktop App               -> the code for the windows 10 app
+<br />Desktop App               -> the code for the windows 10 app (on branch -> master)
 <br />Phone App                 -> the code for the android phone app
 <br />Pillbox Hardware          -> all files for the hardware (not incl. arduino code)
 <br />Pillbox Software          -> pillbox arduino code
