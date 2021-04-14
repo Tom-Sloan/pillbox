@@ -27,7 +27,6 @@ namespace SmartPillBox.Models
         }
         private PillBoxShape _Shape;
 
-
         public String Time
         {
             get { return _Time; }

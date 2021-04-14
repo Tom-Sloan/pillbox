@@ -54,6 +54,8 @@ namespace SmartPillBox.ViewModels
                     Date = new DateTime(2021, 04, i)
                 }); ;
             }
+
+            Conn = new UsbConnection();
         }
         #endregion
 
@@ -65,6 +67,62 @@ namespace SmartPillBox.ViewModels
         /// currently a debug method - to be cleaned up when write to pillbox is funcitonal.
         /// </summary>
         /// <param name="sender"></param>
+        public void ConnectToDeviceClick(Object sender)
+        {
+            //connect to device on COM3 (pillbox microcontroller)
+            Conn.Connect();
+
+            //send message asking for usage data
+            Console.WriteLine("Status of Port: " + Conn.Port.IsOpen.ToString());
+            
+            Conn.AskForUsageData();
+
+            //Messy GUI sleep -> could be implemented in cleaner way
+            System.Threading.Thread.Sleep(50);
+
+            //receive data
+            HashSet<string> usageData = Conn.PillBoxData;
+            Console.WriteLine("Size of PillBoxData in ViewModel: " + Conn.PillBoxData.Count);
+            
+            Day.Clear();
+
+            //fill History View with data
+            foreach (string line in usageData)
+            {
+                Console.WriteLine(line);
+                var free = line.Substring(0, 3);
+                var loc = line.Substring(3, 2);
+                var ctl = line.Substring(5, 1);
+                var timestamp = Convert.ToDouble(line.Substring(6, 10));
+                var dtTime = UnixTimeStampToDouble(timestamp);
+                //pillbox response data should keep change CTL Byte to new message type when alarms are missed
+                if (ctl != "T")
+                {
+                    Day.Add(new DayModel
+                    {
+                        Date = dtTime,
+                        Taken = false
+                    }); ;
+                    Console.WriteLine(dtTime.ToString());
+                }
+                else
+                {
+                    Day.Add(new DayModel
+                    {
+                        Date = dtTime
+                    }); ;
+                }
+            }
+        }
+
+        private DateTime UnixTimeStampToDouble(double timestamp)
+        {
+            DateTime newTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+            newTime = newTime.AddSeconds(timestamp).ToLocalTime();
+            return newTime;
+            
+        }
+        /*
         public void ConnectToDeviceClick(Object sender)
         {
             Day.Clear();
@@ -100,30 +158,6 @@ namespace SmartPillBox.ViewModels
             //read in txt file test C:\Users\Dave\Desktop\SYSC 4907\testdata.txt
 
             //parse lines into 
-        }
-
-        private DateTime UnixTimeStampToDouble(double timestamp)
-        {
-            DateTime newTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
-            newTime = newTime.AddSeconds(timestamp).ToLocalTime();
-            return newTime;
-            
-        }
-
-
-        /*
-        public void ConnectToDeviceClick(Object sender)
-        {
-            //connect to device
-            Conn.Connect();
-
-            //send message asking for usage data
-            Conn.AskForUsageData();
-
-            //receive data
-
-            //fill History View with data
-            
         }
         */
 
